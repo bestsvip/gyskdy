@@ -1,0 +1,3521 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="Intro.css">
+    </link>
+    <script src="Intro.js"></script>
+    <title>系统化设计</title>
+    <style>
+        body,
+        html {
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            touch-action: none;
+            /* 禁用浏览器默认的触摸行为，以便处理双指缩放 */
+            background-image: radial-gradient(circle, #d0d0d0 1px, transparent 1px);
+            background-size: 30px 30px;
+            /* 初始网格大小 */
+            background-position: center center;
+        }
+
+        [contenteditable="true"]:focus {
+            outline: none;
+        }
+
+        .no-label .MultiCard {
+            text-align: left;
+            display: flex;
+            padding: 6px;
+            gap: 4px;
+            /* border-bottom: 1px solid #cccccc; */
+            flex-wrap: wrap;
+            flex-direction: column;
+            align-items: baseline;
+            border-bottom: 1px solid #cccccc3b;
+        }
+
+        .no-label:last-child .MultiCard {
+            border-bottom: 0
+        }
+
+        /* 标签容器 */
+        .label-container {
+            position: absolute;
+            top: -10px;
+            /* 微调位置，使其部分在卡片外部 */
+            right: -10px;
+            /* 微调位置，使其部分在卡片外部 */
+            width: 30px;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 圆形标签样式 */
+        .circle-label {
+            width: 100%;
+            height: 100%;
+            background-color: #cccccc;
+            /* 灰色背景 */
+            color: #ffffff;
+            /* 白色文字 */
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            /* 增加一点阴影 */
+            z-index: 1;
+            /* 确保标签在卡片内容之上 */
+        }
+
+        .folded-corner-card {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            background-color: aliceblue;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            flex-direction: column;
+            align-content: center;
+        }
+
+        /* 灰色方框，位于折角下方 */
+        .folded-corner-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            /* 方框大小与折角三角形匹配 */
+            width: 30px;
+            height: 30px;
+            /* 灰色背景 */
+            background-color: #cccccc;
+            /* 确保它在内容和折角之下 */
+            z-index: 0;
+        }
+
+        /* 使用伪元素创建折角三角形 */
+        .folded-corner-card::before {
+            content: '';
+            position: absolute;
+            /* 定位在右下角 */
+            bottom: 0;
+            right: 0;
+            /* 使用边框技巧创建三角形 */
+            width: 0;
+            height: 0;
+            border-style: solid;
+            /* 调整边框宽度改变三角形大小 */
+            border-width: 30px 30px 0 0;
+            /* 上边框为卡片背景色（白色），模拟向内折叠 */
+            border-color: #ffffff transparent transparent transparent;
+            /* 确保它在内容和灰色方框之上 */
+            z-index: 1;
+        }
+
+        #toolbar {
+            position: fixed;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1001;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 12px 20px;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            display: flex;
+            gap: 15px;
+            backdrop-filter: blur(5px);
+        }
+
+        .toolbar-btn {
+            padding: 10px 20px;
+            background-color: #1890ff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .toolbar-btn:hover {
+            background-color: #40a9ff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .toolbar-btn:active {
+            transform: translateY(0);
+        }
+
+        #trash-can {
+            width: 40px;
+            height: 40px;
+            background-color: #ff4d6b;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+            position: relative;
+            z-index: 1001;
+        }
+
+        #trash-can:hover {
+            background-color: #ff7875;
+            transform: scale(1.1);
+        }
+
+        #trash-can::before {
+            content: "🗑️";
+            font-size: 20px;
+        }
+
+        #trash-can.active {
+            background-color: #ff7875;
+            transform: scale(1.2);
+        }
+
+
+        #add-node-btn,
+        #reset-view-btn,
+        #trash-can-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+            position: relative;
+            z-index: 1001;
+            border: none;
+            padding: 0;
+        }
+
+        #add-node-btn:hover {
+            background-color: #40a9ff;
+            transform: scale(1.1);
+        }
+
+        #add-node-btn:active {
+            transform: scale(1.2);
+        }
+
+        #add-node-btn {
+            background-color: #1890ff;
+        }
+
+        #reset-view-btn {
+            background-color: #1890ff;
+        }
+
+        #reset-view-btn:hover {
+            background-color: #1890ff;
+            transform: scale(1.1);
+        }
+
+        #reset-view-btn:active {
+            transform: scale(1.2);
+        }
+
+        #trash-can-btn {
+            background-color: #ff4d6b;
+        }
+
+        #trash-can-btn:hover {
+            background-color: #ff7875;
+            transform: scale(1.1);
+        }
+
+        #trash-can-btn:active {
+            transform: scale(1.2);
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            cursor: grab;
+            transform-origin: 50% 50%;
+            /* 隐藏滚动条但保持功能 */
+            scrollbar-width: none;
+            /* Firefox */
+        }
+
+        /* Webkit浏览器隐藏滚动条 */
+        #canvas-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        #canvas-container.dragging {
+            cursor: grabbing;
+        }
+
+        .node {
+            position: absolute;
+            min-width: 130px;
+            min-height: 70px;
+            padding: 15px;
+            box-sizing: border-box;
+            background-color: #ffffff;
+            border: 1px solid #e1e4e8;
+            border-radius: 18px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            user-select: none;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            transition: box-shadow 0.2s, border-color 0.2s, opacity 0.3s;
+            z-index: 10;
+            transform-origin: center center;
+            /* 缩放中心点 */
+        }
+
+        /* 添加无标签点的样式 */
+        .no-label {
+            min-width: 20px;
+            min-height: 20px;
+            padding: 0;
+            border-radius: 50%;
+            list-style: none;
+            list-style-type: none;
+        }
+
+        .node.no-label::before {
+            content: "";
+            display: block;
+            width: 10px;
+            height: 10px;
+            background-color: #1890ff;
+            border-radius: 50%;
+        }
+
+        .node.locked {
+            background-color: #f0f5ff;
+            /* 锁定节点的特殊背景色 */
+            border: 2px dashed #1890ff;
+            /* 锁定节点的特殊边框 */
+        }
+
+        .node.locked::after {
+            content: "🔒";
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 16px;
+        }
+
+        .node:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
+            border-color: #d1d5da;
+        }
+
+        .node.dragging {
+            cursor: grabbing;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+            z-index: 1000 !important;
+            /* 确保拖拽时始终置顶 */
+        }
+
+        .node.editing {
+            cursor: text;
+            border-color: #1890ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+            z-index: 1000;
+        }
+
+        .node.editing textarea {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            resize: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 16px;
+            text-align: inherit;
+            overflow: hidden;
+        }
+
+        .node.overlapping {
+            opacity: 0.5;
+        }
+
+        .instructions {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            font-size: 14px;
+            z-index: 1000;
+            max-width: 320px;
+            backdrop-filter: blur(5px);
+        }
+
+        .instructions h3 {
+            margin: 0 0 10px 0;
+            color: #2d3748;
+            font-size: 16px;
+        }
+
+        .instructions ul {
+            padding-left: 20px;
+            margin: 0;
+        }
+
+        .instructions li {
+            margin-bottom: 7px;
+            color: #4a5568;
+        }
+
+        .api-call-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background-color: #fffbe6;
+            border: 1px solid #ffe58f;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            font-size: 14px;
+            color: #d48806;
+            z-index: 1002;
+            display: none;
+        }
+
+        .api-call-indicator-Failed {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background-color: #ff8f8f;
+            border: 1px solid #ffe58f;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            font-size: 14px;
+            color: #d48806;
+            z-index: 1002;
+            display: none;
+        }
+    </style>
+    <style>
+        /* 自定义主题样式 */
+        .custom-intro-tooltip {
+            border-radius: 20px;
+            padding: 0px 6px !important;
+            /* margin-top: 20px !important; */
+            font-size: 14px;
+            line-height: 1.6;
+            max-width: 400px;
+            min-width: 320px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            background: #fff;
+            color: #333;
+            border: 1px solid #eee;
+            animation: fadeIn 0.4s ease-out;
+            transition: all 0.3s ease;
+        }
+
+        .custom-intro-tooltip .introjs-arrow {
+            background: #fff;
+            border: 1px solid #eee;
+            animation: pulse 1.5s infinite;
+        }
+
+        .custom-intro-button {
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            background: #f0f2f5;
+            color: #333;
+            border: none;
+        }
+
+        .custom-intro-button:hover {
+            background: #4a6cf7;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.3);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(0, 0, 0, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+            }
+        }
+
+        .introjs-tooltip-header {
+            display: none;
+        }
+
+        .introjs-tooltiptext {
+            padding: 15px 20px 0px 20px !important;
+        }
+
+        video {
+            width: 280px;
+            height: auto;
+            border-radius: 20px;
+            margin-top: 10px;
+        }
+
+        .introjs-bullets,
+        .introjs-helperNumberLayer {
+            padding: 0 !important;
+            margin: 2px !important;
+        }
+
+        @media screen and (max-height: 600px) {
+            video {
+                display: none;
+            }
+
+            .introjs-bullets,
+            .introjs-helperNumberLayer {
+                padding: 0;
+                margin: 2px;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id="toolbar">
+        <button id="add-node-btn" class="toolbar-btn" style="font-size: 24px;">+</button>
+        <button id="reset-view-btn" class="toolbar-btn" style="font-size: 20px;">◎</button>
+        <button id="trash-can-btn" class="toolbar-btn" style="font-size: 24px;"><span
+                style="margin-top: -2px;">♲</span></button>
+        <!-- 废弃图标 🎯 🧭 📁 🗑-->
+        <!-- <button id="add-locked-node-btn" class="toolbar-btn">添加锁定节点</button> -->
+        <!-- <div id="trash-can"></div> -->
+    </div>
+
+    <div class="instructions">
+        <h3>操作说明</h3>
+        <ul>
+            <li><strong>添加节点:</strong> 点击 "+" 按钮</li>
+            <!-- <li><strong>添加锁定节点:</strong> 点击 "添加锁定节点" 按钮</li> -->
+            <li><strong>编辑文字:</strong> 双击节点</li>
+            <li><strong>拖动节点/画布:</strong> 按住并拖动</li>
+            <li><strong>缩放画布:</strong> 鼠标滚轮 / 手机端双指捏合</li>
+            <li><strong>返回中心:</strong> 点击 "◎" 按钮</li>
+            <li><strong>重叠交互:</strong> 拖动节点使其90%重叠，<strong>松开</strong>后触发思考并生成新Idea</li>
+            <li><strong>删除节点:</strong> 将节点拖拽到 "♲" 上 (锁定节点除外)</li>
+        </ul>
+    </div>
+    <div id="api-call-indicator" class="api-call-indicator">南神思考中...</div>
+    <div id="api-call-indicator-Failed" class="api-call-indicator-Failed">南神思绪被打乱了(ˇˍˇ)...</div>
+    <div id="canvas-container"></div>
+    <script>
+        // 新手教程引导变量
+        let guaid1 = 0;
+        let guaid2 = 0;
+        let guaid3 = 0;
+        let guaid4 = 0;
+        let guaid5 = 0;
+
+        // 新手教程
+        let beautyIntro;
+        function OnceIntro(element, intro, position) {
+            if (!localStorage.getItem('introjs-dontShowAgain')) {
+                const Intro = introJs.tour()
+                return Intro.setOptions({
+                    nextLabel: '明白',
+                    prevLabel: '明白',
+                    skipLabel: '',
+                    doneLabel: '明白',
+                    // showStepNumbers: true,
+                    hidePrev: true,
+                    // hideNext: true,
+                    showBullets: false,
+                    showProgress: false,
+                    // showButtons: false,
+                    overlayOpacity: 0.75,
+                    tooltipClass: 'custom-intro-tooltip',
+                    buttonClass: 'custom-intro-button',
+                    highlightClass: 'custom-intro-highlight',
+                    animate: true,
+                    // 添加自定义主题
+                    theme: 'custom-theme',
+                    // helperElementPadding: 0,      // 辅助元素的内边距
+                    // overlayOpacity: 0.5,          // 遮罩层不透明度
+                    // 交互行为
+                    exitOnEsc: false,  // 禁用ESC退出
+
+                    keyboardNavigation: true,
+                })
+                    .addSteps([
+                        {
+                            element: element,
+                            intro: intro,
+                            position: position
+                        }
+                    ])
+                // .oncomplete(
+                //     function () {
+                //         // 添加一个Cookie，表示用户已经完成引导
+                //         localStorage.setItem('introjs-dontShowAgain', 1);
+                //     }
+                // )
+            }
+        }
+        function MultiIntro(elements) {
+            if (!localStorage.getItem('introjs-dontShowAgain')) {
+                const Intro = introJs.tour()
+                return Intro.setOptions({
+                    nextLabel: '明白',
+                    prevLabel: '上一步',
+                    skipLabel: '',
+                    doneLabel: '明白',
+                    showStepNumbers: true,
+                    hidePrev: true,
+                    showBullets: true,
+                    overlayOpacity: 0.75,
+                    tooltipClass: 'custom-intro-tooltip',
+                    buttonClass: 'custom-intro-button',
+                    highlightClass: 'custom-intro-highlight',
+                    animate: true,
+                    // 添加自定义主题
+                    theme: 'custom-theme',
+                    // helperElementPadding: 0,      // 辅助元素的内边距
+                    // // 交互行为
+                    exitOnEsc: false,  // 禁用ESC退出
+                    keyboardNavigation: true,
+                    // 界面显示
+                    stepNumbersOfLabel: "/",
+                })
+                    .addSteps(elements)
+            }
+        }
+        // 监听整个文档的点击事件
+        // document.addEventListener('click', function (event) {
+        //     // 获取点击位置的元素
+        //     const clickedElement = document.elementFromPoint(event.clientX, event.clientY);
+
+        //     // 获取并显示元素的信息
+        //     console.log('点击的元素:', clickedElement);
+        //     console.log('元素标签名:', clickedElement.tagName);
+        //     console.log('元素类名:', clickedElement.className);
+        //     console.log('元素ID:', clickedElement.id);
+
+        //     // 可以添加更多操作，如修改样式、获取属性等
+        //     if (clickedElement) {
+        //         // 例如：高亮显示点击的元素
+        //         const originalStyle = clickedElement.style.backgroundColor;
+        //         clickedElement.style.backgroundColor = '#ffcc00';
+
+        //         // 3秒后恢复样式
+        //         setTimeout(() => {
+        //             clickedElement.style.backgroundColor = originalStyle;
+        //         }, 3000);
+        //     }
+        // });
+
+        function startIntro(beautyIntro) {
+            try {
+                beautyIntro.start();
+                // playVideo()
+                // document.addEventListener('click', function () {
+                //     beautyIntro.exit(); // 直接调用exit方法关闭引导
+                // });
+            } catch (error) {
+                console.log(error);
+            }
+        }
+        function startIntroComplete(beautyIntro) {
+            try {
+                beautyIntro.oncomplete(
+                    function () {
+                        // 添加一个Cookie，表示用户已经完成引导
+                        localStorage.setItem('introjs-dontShowAgain', 1);
+                    }
+                ).start();
+            } catch (error) {
+                console.log(error);
+            }
+        }
+        function playVideo() {
+            var video = document.querySelector('video');
+            if (video.paused) {
+                video.play();
+            } else {
+                video.pause();
+            }
+        }
+        function guaidance1() {
+            setTimeout(() => {
+                const beautyIntro = MultiIntro([{
+                    element: '#node-0', intro: `\
+                        <center>
+                        <div>双击节点，修改内容为你想要的调研的品类</div>
+                        <div style='color:#888'>（所有节点都可以相互反应，<strong>锁定节点生成的表格节点除外</strong>）</div>
+                        <video muted autoplay loop>
+                            <source src="xsjc1.min.mp4" type="video/mp4">
+                        </video>
+                        </center>
+                        `, position: 'bottom'
+                }, {
+                    element: '#node-2', intro: `\
+                        <center>
+                        <div>将刚才修改后的节点拖动到现在的【锁定节点】上，锁定节点不可被删除</div>
+                        <video muted autoplay loop>
+                            <source src="xsjc2.min.mp4" type="video/mp4">
+                        </video>
+                        </center>
+                        `, position: 'bottom'
+                }]);
+                startIntro(beautyIntro)
+            }, 100);
+        }
+        // <div style='color:#888'>(单击【空白处】继续操作)</div>
+        // function guaidance2() {
+        //     setTimeout(() => {
+        //         const beautyIntro = OnceIntro('#node-2', `\
+        //                 <center>
+        //                 <div>将刚才修改后的节点拖动到现在的【锁定节点】上，锁定节点不可被删除</div>
+        //                 <video muted autoplay loop>
+        //                     <source src="xsjc2.min.mp4" type="video/mp4">
+        //                 </video>
+        //                 </center>
+        //                 `, 'bottom')
+        //         startIntro(beautyIntro)
+        //     }, 100);
+        // }
+        function guaidance3() {
+            setTimeout(() => {
+                const beautyIntro = MultiIntro([{
+                    element: '#api-call-indicator',
+                    intro: `\
+                        <center>
+                        <div>等待南神思考完毕</div>
+                        </center>
+                        `,
+                    position: 'bottom'
+                }, {
+                    element: '#node-3',
+                    intro: `\
+                        <center>
+                        <div>与锁定节点反应时，可以解锁部分新锁定节点,新锁定节点会随机刷新在附近的空白处</div>
+                        <div>（锁定节点非AI生成，仅提供思维模式）</div>
+                        <div></div>
+                        <div style='color:#888'>使用时建议将节点拖拽出空旷处反应，以免乱成一团</div>
+                        <video muted autoplay loop>
+                            <source src="SuggestDragging2Blank.min.mp4" type="video/mp4">
+                        </video>
+                        </center>
+                        `,
+                    position: 'left'
+                }, {
+                    element: '#node-0',
+                    intro: `\
+                        <center>
+                        <div>参考新生成的关键词，可以对初始关键词进行修改完善</div>
+                        <div>（其余关键词节点亦可）</div>
+                        <video muted autoplay loop>
+                            <source src="Improvekeywords.min.mp4" type="video/mp4">
+                        </video>
+                        </center>
+                        `,
+                    position: 'bottom'
+                }, {
+                    element: '#node-2',
+                    intro: `\
+                        <center>
+                            <div>修改完关键词节点后，可以重新拖拽至该节点生成新关键词</div>
+                            <video muted autoplay loop>
+                                <source src="CanRepeat.min.mp4" type="video/mp4">
+                            </video>
+                        </center>
+                            `,
+                    position: 'bottom'
+                }, {
+                    element: '#trash-can-btn',
+                    intro: `\
+                        <center>
+                            <div>不要的关键词节点可以拖拽至回收站</div>
+                            <video muted autoplay loop>
+                                <source src="Move2Crash.min.mp4" type="video/mp4">
+                            </video>
+                        </center>
+                            `,
+                    position: 'bottom'
+                }, {
+                    element: '#reset-view-btn',
+                    intro: `\
+                        <center>
+                            <div>当拖拽画布过远后，无法将画布拖回屏幕，可以单击此按钮将画布复位于屏幕中心</div>
+                            <video muted autoplay loop>
+                                <source src="Turn2Center.min.mp4" type="video/mp4">
+                            </video>
+                        </center>
+                            `,
+                    position: 'bottom'
+                }, {
+                    element: '#add-node-btn',
+                    intro: `\
+                        <center>
+                            <div>当不小心将所有可编辑节点全部删除或是需要一个新的可编辑节点时，单击此按钮可以在空白处新建一个可编辑节点</div>
+                            <video muted autoplay loop>
+                                <source src="AddNewNode.min.mp4" type="video/mp4">
+                            </video>
+                        </center>
+                        `,
+                    position: 'bottom'
+                }, {
+                    element: 'body',
+                    intro: `\
+                        <center>
+                        <div>新手教程已结束，感谢您的使用</div>
+                        </center>
+                        `,
+                    position: 'bottom'
+                },
+                ])
+                startIntroComplete(beautyIntro)
+            }, 100);
+        }
+        function guaidance4(nodeId) {
+            setTimeout(() => {
+                const beautyIntro = OnceIntro(nodeId, `\
+                        <center>
+                        <div>表格节点皆不可与其他节点反应</div>
+                        </center>
+                        `, 'bottom')
+                startIntro(beautyIntro)
+            }, 1000);
+        }
+        guaidance1()
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const html = document.body.parentNode;
+            const body = document.body;
+            const canvasContainer = document.getElementById('canvas-container');
+            const addNodeButton = document.getElementById('add-node-btn');
+            const resetViewButton = document.getElementById('reset-view-btn');
+            const addLockedNodeButton = document.getElementById('add-locked-node-btn');
+            // const trashCan = document.getElementById('trash-can');
+            const trashCan = document.getElementById('trash-can-btn');
+            const apiIndicator = document.getElementById('api-call-indicator');
+            const apiIndicatorFailed = document.getElementById('api-call-indicator-Failed');
+
+            let isDraggingCanvas = false;
+            let startX, startY;
+            let nodeIdCounter = 0;
+            const nodes = new Map();
+            let activeDragNode = null;
+            let dragStartX, dragStartY;
+
+            // --- Zoom and Pan Variables ---
+            let scale = 1;
+            let isPinching = false;
+            let initialPinchDistance = 0;
+            let lastTouchCenterX = 0;
+            let lastTouchCenterY = 0;
+            let initialScale = 1;
+            // --- Overlap Logic Variables ---
+            let pendingApiCall = null; // 用于存储待触发的API调用信息
+            // 新增：用于跟踪节点反应历史
+            const nodeReactionHistory = new Set(); // 存储已反应的节点ID
+
+            // --- Trash Can Logic Variables ---
+            let isDraggingToTrash = false;
+
+            // --- Z-index Management ---
+            let maxZIndex = 10; // 初始最大z-index
+
+
+            // --- Utility Functions ---
+            function getOverlapArea(nodeA, nodeB) {
+                const left = Math.max(nodeA.x, nodeB.x);
+                const right = Math.min(nodeA.x + nodeA.width, nodeB.x + nodeB.width);
+                const top = Math.max(nodeA.y, nodeB.y);
+                const bottom = Math.min(nodeA.y + nodeA.height, nodeB.y + nodeB.height);
+
+                if (left < right && top < bottom) {
+                    return (right - left) * (bottom - top);
+                }
+                return 0;
+            }
+
+            function getArea(node) {
+                return node.width * node.height;
+            }
+
+            // 计算一组节点的边界框中心，并移动画布使其居中
+            function centerViewOnNodes(nodeList) {
+                if (nodeList.length === 0) return;
+
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+                nodeList.forEach(node => {
+                    minX = Math.min(minX, node.x);
+                    minY = Math.min(minY, node.y);
+                    maxX = Math.max(maxX, node.x + node.width);
+                    maxY = Math.max(maxY, node.y + node.height);
+                });
+
+                const centerX = (minX + maxX) / 2;
+                const centerY = (minY + maxY) / 2;
+
+                const viewportWidth = canvasContainer.clientWidth;
+                const viewportHeight = canvasContainer.clientHeight;
+
+                // 修复：正确计算考虑缩放和画布偏移的滚动位置
+                const containerRect = canvasContainer.getBoundingClientRect();
+                canvasContainer.scrollTo({
+                    left: centerX * scale - viewportWidth / 2 - containerRect.left,
+                    top: centerY * scale - viewportHeight / 2 - containerRect.top,
+                    behavior: 'smooth'
+                });
+            }
+
+            // 新增：重置视图到中心点功能
+            function resetViewToCenter() {
+                // 重置body和html的left/top为0
+                body.style.marginLeft = '0px';
+                body.style.marginTop = '0px';
+                html.style.marginLeft = '0px';
+                html.style.marginTop = '0px';
+                canvasContainer.style.left = '0px';
+                canvasContainer.style.top = '0px';
+
+                // 计算所有节点的中心位置并居中显示
+                if (nodes.size > 0) {
+                    const allNodes = Array.from(nodes.values());
+                    centerViewOnNodes(allNodes);
+                }
+            }
+
+            // --- Zoom Functions ---
+            function setScale(newScale, mouseX, mouseY) {
+                const oldScale = scale;
+                // 限制缩放范围
+                scale = Math.min(Math.max(0.1, newScale), 5);
+
+                // 如果提供了鼠标坐标，则以该点为中心进行缩放
+                if (mouseX !== undefined && mouseY !== undefined) {
+                    // 计算世界坐标 (缩放前)
+                    const worldX = (mouseX + canvasContainer.scrollLeft) / oldScale;
+                    const worldY = (mouseY + canvasContainer.scrollTop) / oldScale;
+
+                    canvasContainer.style.transform = `scale(${scale})`;
+
+                    // 调整 scrollLeft 和 scrollTop 以使缩放中心保持在鼠标位置
+                    canvasContainer.scrollLeft = worldX * scale - mouseX;
+                    canvasContainer.scrollTop = worldY * scale - mouseY;
+                } else {
+                    // 如果没有提供鼠标坐标，则在当前视图中心缩放
+                    const rect = canvasContainer.getBoundingClientRect();
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    const worldX = (centerX + canvasContainer.scrollLeft) / oldScale;
+                    const worldY = (centerY + canvasContainer.scrollTop) / oldScale;
+
+                    canvasContainer.style.transform = `scale(${scale})`;
+
+                    canvasContainer.scrollLeft = worldX * scale - centerX;
+                    canvasContainer.scrollTop = worldY * scale - centerY;
+                }
+                // 调整背景网格大小以适应缩放
+                const gridSize = 30 * scale;
+                canvasContainer.style.backgroundSize = `${gridSize}px ${gridSize}px`;
+            }
+
+            function handleWheel(e) {
+                e.preventDefault();
+                const rect = canvasContainer.getBoundingClientRect();
+                // 获取鼠标相对于画布容器左上角的位置
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                // 根据滚动方向调整缩放比例
+                const zoomIntensity = 0.1;
+                const wheel = e.deltaY < 0 ? 1 : -1;
+                console.log('wheel', e.deltaY);
+                const zoom = Math.exp(wheel * zoomIntensity);
+                setScale(scale * zoom, mouseX, mouseY);
+            }
+
+            // --- Touch Event Handlers for Pinch Zoom ---
+            function getDistance(touch1, touch2) {
+                const dx = touch1.clientX - touch2.clientX;
+                const dy = touch1.clientY - touch2.clientY;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+
+            function getMidpoint(touch1, touch2) {
+                return {
+                    x: (touch1.clientX + touch2.clientX) / 2,
+                    y: (touch1.clientY + touch2.clientY) / 2
+                };
+            }
+            function EndEditing() {
+                nodes.forEach(node => {
+                    if (node.isEditing) {
+                        // 找到正在编辑的节点并保存
+                        const textarea = node.element.querySelector('textarea');
+                        if (textarea) {
+                            const newText = textarea.value.trim() || '编辑我...';
+                            node.element.classList.remove('editing');
+                            node.element.textContent = newText;
+                            node.isEditing = false;
+                            requestAnimationFrame(() => {
+                                node.width = node.element.offsetWidth;
+                                node.height = node.element.offsetHeight;
+                            });
+                        }
+                    }
+                });
+            }
+
+            canvasContainer.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 2) {
+                    isPinching = true;
+                    initialPinchDistance = getDistance(e.touches[0], e.touches[1]);
+                    const midpoint = getMidpoint(e.touches[0], e.touches[1]);
+                    const rect = canvasContainer.getBoundingClientRect();
+                    lastTouchCenterX = midpoint.x - rect.left;
+                    lastTouchCenterY = midpoint.y - rect.top;
+                    e.preventDefault(); // 阻止默认的双指行为（如缩放页面）
+                } else if (e.touches.length === 1 && !isPinching) {
+                    // 单指触摸开始，用于拖画画布
+                    isDraggingCanvas = true;
+                    canvasContainer.classList.add('dragging');
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+                    const computedStyle = window.getComputedStyle(canvasContainer);
+                    startLeft = parseFloat(computedStyle.left) || 0;
+                    startTop = parseFloat(computedStyle.top) || 0;
+                    // 阻止事件冒泡，防止意外选中元素
+                    e.preventDefault();
+                }
+                EndEditing()
+            });
+
+            canvasContainer.addEventListener('touchmove', (e) => {
+                if (isPinching && e.touches.length === 2) {
+                    // 双指缩放
+                    const currentPinchDistance = getDistance(e.touches[0], e.touches[1]);
+                    const scaleChange = currentPinchDistance / initialPinchDistance;
+                    const newScale = initialScale * scaleChange;
+
+
+                    // 限制缩放范围
+                    if (newScale > 0.1 && newScale < 5) {
+                        scale = newScale;
+                        canvasContainer.style.transform = `scale(${scale})`;
+
+                        // 调整背景网格大小以适应缩放
+                        const gridSize = 30 * scale;
+                        canvasContainer.style.backgroundSize = `${gridSize}px ${gridSize}px`;
+                    }
+
+                    // 双指中心点世界坐标保持不变
+                    const midpoint = getMidpoint(e.touches[0], e.touches[1]);
+                    const rect = canvasContainer.getBoundingClientRect();
+                    const currentTouchCenterX = midpoint.x - rect.left;
+                    const currentTouchCenterY = midpoint.y - rect.top;
+
+                    lastTouchCenterX = currentTouchCenterX;
+                    lastTouchCenterY = currentTouchCenterY;
+                    e.preventDefault();
+                }
+                if (isDraggingCanvas && e.touches.length === 1) {
+                    // 单指拖画画布
+                    const dx = e.touches[0].clientX - startX;
+                    const dy = e.touches[0].clientY - startY;
+                    canvasContainer.style.left = (startLeft + dx) + 'px';
+                    canvasContainer.style.top = (startTop + dy) + 'px';
+                    e.preventDefault();
+                } else if (activeDragNode) {
+                    // 拖动节点 (移动端)
+                    const dx = e.touches[0].clientX - dragStartX;
+                    const dy = e.touches[0].clientY - dragStartY;
+                    // 由于节点是绝对定位的，拖动距离不应受缩放影响
+                    activeDragNode.x += dx / scale;
+                    activeDragNode.y += dy / scale;
+                    activeDragNode.element.style.left = `${activeDragNode.x}px`;
+                    activeDragNode.element.style.top = `${activeDragNode.y}px`;
+                    dragStartX = e.touches[0].clientX;
+                    dragStartY = e.touches[0].clientY;
+
+                    activeDragNode.width = activeDragNode.element.offsetWidth;
+                    activeDragNode.height = activeDragNode.element.offsetHeight;
+
+                    // 在拖动过程中检查重叠，但不立即触发API
+                    checkOverlapDuringDrag(activeDragNode);
+
+                    // 检查是否拖到垃圾桶
+                    checkTrashCanHover(e.touches[0].clientX, e.touches[0].clientY);
+                    e.preventDefault();
+                }
+            });
+
+            body.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 2) {
+                    isPinching = true;
+                    initialPinchDistance = getDistance(e.touches[0], e.touches[1]);
+                    const midpoint = getMidpoint(e.touches[0], e.touches[1]);
+                    const rect = canvasContainer.getBoundingClientRect();
+                    lastTouchCenterX = midpoint.x - rect.left;
+                    lastTouchCenterY = midpoint.y - rect.top;
+                    e.preventDefault(); // 阻止默认的双指行为（如缩放页面）
+                } else if (e.touches.length === 1 && !isPinching) {
+                    // 单指触摸开始，用于拖画画布
+                    isDraggingCanvas = true;
+                    canvasContainer.classList.add('dragging');
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+                    const computedStyle = window.getComputedStyle(canvasContainer);
+                    startLeft = parseFloat(computedStyle.left) || 0;
+                    startTop = parseFloat(computedStyle.top) || 0;
+                    // 阻止事件冒泡，防止意外选中元素
+                    e.preventDefault();
+                }
+                EndEditing()
+            });
+
+            body.addEventListener('touchmove', (e) => {
+                if (isPinching && e.touches.length === 2) {
+                    // 双指缩放
+                    const currentPinchDistance = getDistance(e.touches[0], e.touches[1]);
+                    const scaleChange = currentPinchDistance / initialPinchDistance;
+                    const newScale = initialScale * scaleChange;
+
+
+                    // 限制缩放范围
+                    if (newScale > 0.1 && newScale < 5) {
+                        scale = newScale;
+                        canvasContainer.style.transform = `scale(${scale})`;
+
+                        // 调整背景网格大小以适应缩放
+                        const gridSize = 30 * scale;
+                        canvasContainer.style.backgroundSize = `${gridSize}px ${gridSize}px`;
+                    }
+
+                    // 双指中心点世界坐标保持不变
+                    const midpoint = getMidpoint(e.touches[0], e.touches[1]);
+                    const rect = canvasContainer.getBoundingClientRect();
+                    const currentTouchCenterX = midpoint.x - rect.left;
+                    const currentTouchCenterY = midpoint.y - rect.top;
+
+                    lastTouchCenterX = currentTouchCenterX;
+                    lastTouchCenterY = currentTouchCenterY;
+                    e.preventDefault();
+                }
+                if (isDraggingCanvas && e.touches.length === 1) {
+                    // 单指拖画画布
+                    const dx = e.touches[0].clientX - startX;
+                    const dy = e.touches[0].clientY - startY;
+                    canvasContainer.style.left = (startLeft + dx) + 'px';
+                    canvasContainer.style.top = (startTop + dy) + 'px';
+                    e.preventDefault();
+                } else if (activeDragNode) {
+                    // 拖动节点 (移动端)
+                    const dx = e.touches[0].clientX - dragStartX;
+                    const dy = e.touches[0].clientY - dragStartY;
+                    // 由于节点是绝对定位的，拖动距离不应受缩放影响
+                    activeDragNode.x += dx / scale;
+                    activeDragNode.y += dy / scale;
+                    activeDragNode.element.style.left = `${activeDragNode.x}px`;
+                    activeDragNode.element.style.top = `${activeDragNode.y}px`;
+                    dragStartX = e.touches[0].clientX;
+                    dragStartY = e.touches[0].clientY;
+
+                    activeDragNode.width = activeDragNode.element.offsetWidth;
+                    activeDragNode.height = activeDragNode.element.offsetHeight;
+
+                    // 在拖动过程中检查重叠，但不立即触发API
+                    checkOverlapDuringDrag(activeDragNode);
+
+                    // 检查是否拖到垃圾桶
+                    checkTrashCanHover(e.touches[0].clientX, e.touches[0].clientY);
+                    e.preventDefault();
+                }
+            });
+
+            html.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 2) {
+                    isPinching = true;
+                    initialPinchDistance = getDistance(e.touches[0], e.touches[1]);
+                    const midpoint = getMidpoint(e.touches[0], e.touches[1]);
+                    const rect = canvasContainer.getBoundingClientRect();
+                    lastTouchCenterX = midpoint.x - rect.left;
+                    lastTouchCenterY = midpoint.y - rect.top;
+                    e.preventDefault(); // 阻止默认的双指行为（如缩放页面）
+                } else if (e.touches.length === 1 && !isPinching) {
+                    // 单指触摸开始，用于拖画画布
+                    isDraggingCanvas = true;
+                    canvasContainer.classList.add('dragging');
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+                    const computedStyle = window.getComputedStyle(canvasContainer);
+                    startLeft = parseFloat(computedStyle.left) || 0;
+                    startTop = parseFloat(computedStyle.top) || 0;
+                    // 阻止事件冒泡，防止意外选中元素
+                    e.preventDefault();
+                }
+                EndEditing()
+            });
+
+            html.addEventListener('touchmove', (e) => {
+                if (isPinching && e.touches.length === 2) {
+                    // 双指缩放
+                    const currentPinchDistance = getDistance(e.touches[0], e.touches[1]);
+                    const scaleChange = currentPinchDistance / initialPinchDistance;
+                    const newScale = initialScale * scaleChange;
+
+
+                    // 限制缩放范围
+                    if (newScale > 0.1 && newScale < 5) {
+                        scale = newScale;
+                        canvasContainer.style.transform = `scale(${scale})`;
+
+                        // 调整背景网格大小以适应缩放
+                        const gridSize = 30 * scale;
+                        canvasContainer.style.backgroundSize = `${gridSize}px ${gridSize}px`;
+                    }
+
+                    // 双指中心点世界坐标保持不变
+                    const midpoint = getMidpoint(e.touches[0], e.touches[1]);
+                    const rect = canvasContainer.getBoundingClientRect();
+                    const currentTouchCenterX = midpoint.x - rect.left;
+                    const currentTouchCenterY = midpoint.y - rect.top;
+
+                    lastTouchCenterX = currentTouchCenterX;
+                    lastTouchCenterY = currentTouchCenterY;
+                    e.preventDefault();
+                }
+                if (isDraggingCanvas && e.touches.length === 1) {
+                    // 单指拖画画布
+                    const dx = e.touches[0].clientX - startX;
+                    const dy = e.touches[0].clientY - startY;
+                    canvasContainer.style.left = (startLeft + dx) + 'px';
+                    canvasContainer.style.top = (startTop + dy) + 'px';
+                    e.preventDefault();
+                } else if (activeDragNode) {
+                    // 拖动节点 (移动端)
+                    const dx = e.touches[0].clientX - dragStartX;
+                    const dy = e.touches[0].clientY - dragStartY;
+                    // 由于节点是绝对定位的，拖动距离不应受缩放影响
+                    activeDragNode.x += dx / scale;
+                    activeDragNode.y += dy / scale;
+                    activeDragNode.element.style.left = `${activeDragNode.x}px`;
+                    activeDragNode.element.style.top = `${activeDragNode.y}px`;
+                    dragStartX = e.touches[0].clientX;
+                    dragStartY = e.touches[0].clientY;
+
+                    activeDragNode.width = activeDragNode.element.offsetWidth;
+                    activeDragNode.height = activeDragNode.element.offsetHeight;
+
+                    // 在拖动过程中检查重叠，但不立即触发API
+                    checkOverlapDuringDrag(activeDragNode);
+
+                    // 检查是否拖到垃圾桶
+                    checkTrashCanHover(e.touches[0].clientX, e.touches[0].clientY);
+                    e.preventDefault();
+                }
+            });
+
+            document.addEventListener('touchend', (e) => {
+                if (isPinching) {
+                    if (e.touches.length === 1) {
+                        initialPinchDistance = 0;
+                        isPinching = false;
+                    } else if (e.touches.length === 0) {
+                        isPinching = false;
+                        initialPinchDistance = 0;
+                    }
+                }
+                if (isDraggingCanvas) {
+                    isDraggingCanvas = false;
+                    canvasContainer.classList.remove('dragging');
+                }
+                // 添加: 在移动端触摸结束时检查是否点击了空白处
+                if (activeDragNode) {
+                    // --- 修改：在移动端触摸结束时也检查垃圾桶状态 ---
+                    if (isDraggingToTrash) {
+                        // 检查节点是否可删除
+                        if (activeDragNode.locked) {
+                            console.log(`节点 ${activeDragNode.id} 是锁定的，无法删除。`);
+                            activeDragNode.element.style.animation = 'shake 0.5s';
+                            setTimeout(() => {
+                                activeDragNode.element.style.animation = '';
+                            }, 500);
+                        } else {
+                            deleteNode(activeDragNode.id);
+                        }
+                        isDraggingToTrash = false;
+                        trashCan.classList.remove('active');
+                    }
+                    endDrag(activeDragNode);
+                }
+            });
+
+
+            // --- Core Interaction Logic ---
+
+            // Canvas Panning (鼠标)
+            canvasContainer.addEventListener('mousedown', (e) => {
+                // 如果点击的是画布，结束所有节点的编辑状态
+                if (e.target === canvasContainer) {
+                    EndEditing()
+                }
+
+                if (e.target === canvasContainer) {
+                    isDraggingCanvas = true;
+                    canvasContainer.classList.add('dragging');
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    // 保存当前的left和top值
+                    const computedStyle = window.getComputedStyle(canvasContainer);
+                    startLeft = parseFloat(computedStyle.left) || 0;
+                    startTop = parseFloat(computedStyle.top) || 0;
+                    e.preventDefault();
+                }
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDraggingCanvas) {
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
+                    // 修改为直接修改left和top样式属性
+                    canvasContainer.style.left = (startLeft + dx) + 'px';
+                    canvasContainer.style.top = (startTop + dy) + 'px';
+                } else if (activeDragNode) {
+                    const dx = e.clientX - dragStartX;
+                    const dy = e.clientY - dragStartY;
+                    // 由于节点是绝对定位的，拖动距离不应受缩放影响
+                    activeDragNode.x += dx / scale;
+                    activeDragNode.y += dy / scale;
+                    activeDragNode.element.style.left = `${activeDragNode.x}px`;
+                    activeDragNode.element.style.top = `${activeDragNode.y}px`;
+                    dragStartX = e.clientX;
+                    dragStartY = e.clientY;
+
+                    activeDragNode.width = activeDragNode.element.offsetWidth;
+                    activeDragNode.height = activeDragNode.element.offsetHeight;
+
+                    // 在拖动过程中检查重叠，但不立即触发API
+                    checkOverlapDuringDrag(activeDragNode);
+
+                    // 检查是否拖到垃圾桶
+                    checkTrashCanHover(e.clientX, e.clientY);
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDraggingCanvas = false;
+                canvasContainer.classList.remove('dragging');
+
+                if (activeDragNode) {
+                    endDrag(activeDragNode);
+                }
+            });
+
+            // body部分
+            body.addEventListener('mousedown', (e) => {
+                // 如果点击的是画布，结束所有节点的编辑状态
+                if (e.target === body) {
+                    EndEditing()
+                }
+
+                if (e.target === body) {
+                    isDraggingCanvas = true;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    // 保存当前的left和top值
+                    const computedStyle = window.getComputedStyle(canvasContainer);
+                    startLeft = parseFloat(computedStyle.left) || 0;
+                    startTop = parseFloat(computedStyle.top) || 0;
+                    e.preventDefault();
+                }
+            });
+
+            // html部分
+            html.addEventListener('mousedown', (e) => {
+                // 如果点击的是画布，结束所有节点的编辑状态
+                if (e.target === html) {
+                    EndEditing()
+                }
+
+                if (e.target === html) {
+                    isDraggingCanvas = true;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    // 保存当前的left和top值
+                    const computedStyle = window.getComputedStyle(canvasContainer);
+                    startLeft = parseFloat(computedStyle.left) || 0;
+                    startTop = parseFloat(computedStyle.top) || 0;
+                    e.preventDefault();
+                }
+            });
+
+
+            function endDrag(draggedNode) {
+                draggedNode.element.classList.remove('dragging');
+                nodes.forEach(node => {
+                    node.element.classList.remove('overlapping');
+                });
+
+                // --- 修改：在拖拽结束时也处理垃圾桶逻辑 ---
+                if (isDraggingToTrash) {
+                    // --- 修改：检查节点是否可删除 ---
+                    if (draggedNode.locked) {
+                        console.log(`节点 ${draggedNode.id} 是锁定的，无法删除。`);
+                        // 可以在这里添加视觉反馈，比如闪烁或提示
+                        draggedNode.element.style.animation = 'shake 0.5s';
+                        setTimeout(() => {
+                            draggedNode.element.style.animation = '';
+                        }, 500);
+                    } else {
+                        deleteNode(draggedNode.id);
+                    }
+                    isDraggingToTrash = false;
+                    trashCan.classList.remove('active');
+                } else {
+                    // --- 关键修改：在松开鼠标时检查并触发API ---
+                    if (pendingApiCall) {
+                        callApiAndCreateNodes(pendingApiCall.nodeA, pendingApiCall.nodeB);
+                        pendingApiCall = null; // 重置
+                    }
+                }
+
+                activeDragNode = null;
+            }
+
+            // 删除节点函数
+            function deleteNode(nodeId) {
+                const node = nodes.get(nodeId);
+                if (node) {
+                    node.element.remove();
+                    nodes.delete(nodeId);
+                }
+            }
+
+            // 添加垃圾桶悬停检查
+            function checkTrashCanHover(clientX, clientY) {
+                const trashRect = trashCan.getBoundingClientRect();
+                const isOverTrash = (
+                    clientX >= trashRect.left &&
+                    clientX <= trashRect.right &&
+                    clientY >= trashRect.top &&
+                    clientY <= trashRect.bottom
+                );
+
+                if (isOverTrash) {
+                    trashCan.classList.add('active');
+                    isDraggingToTrash = true;
+                } else {
+                    trashCan.classList.remove('active');
+                    isDraggingToTrash = false;
+                }
+            }
+
+            // Add Node Button
+            addNodeButton.addEventListener('click', (e) => {
+                // 在视口中心创建节点，需要考虑缩放和滚动
+                const x = (canvasContainer.scrollLeft + canvasContainer.clientWidth / 2) / scale - 65;
+                const y = (canvasContainer.scrollTop + canvasContainer.clientHeight / 2) / scale - 35;
+                createNode(x, y);
+            });
+
+            // 新增：绑定重置视图按钮事件
+            resetViewButton.addEventListener('click', resetViewToCenter);
+
+            function unlockNode(NodeName = '') {
+                // console.log(NodeName);
+                for (const [id, node] of nodes) {
+                    if (node.locked && NodeName.includes(node.element.textContent)) {
+                        console.log(`锁定节点 "${NodeName}" 已存在，无需重复创建`);
+                        return; // 如果已存在，直接返回不创建新节点
+                    }
+                }
+
+                // 创建提示栏元素
+                const unlockIndicator = document.createElement('div');
+                unlockIndicator.textContent = '解锁了新锁定节点' + NodeName;
+                unlockIndicator.style.position = 'fixed';
+                unlockIndicator.style.top = '100px';
+                unlockIndicator.style.left = '50%';
+                unlockIndicator.style.transform = 'translateX(-50%)';
+                unlockIndicator.style.padding = '10px 20px';
+                unlockIndicator.style.backgroundColor = '#52c41a';
+                unlockIndicator.style.color = 'white';
+                unlockIndicator.style.borderRadius = '4px';
+                unlockIndicator.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
+                unlockIndicator.style.zIndex = '1002';
+                unlockIndicator.style.fontSize = '14px';
+                unlockIndicator.style.fontWeight = '500';
+                unlockIndicator.style.transition = 'opacity 0.3s';
+
+                // 添加到页面中
+                document.body.appendChild(unlockIndicator);
+
+                // 3秒后自动移除提示
+                setTimeout(() => {
+                    unlockIndicator.style.opacity = '0';
+                    setTimeout(() => {
+                        document.body.removeChild(unlockIndicator);
+                    }, 300);
+                }, 3000);
+            }
+
+            // Add Locked Node Button
+            function addLockedNode(LockNodeName) {
+                // 检查是否已存在同名的锁定节点
+                for (const [id, node] of nodes) {
+                    if (node.locked && node.element.textContent === LockNodeName) {
+                        console.log(`锁定节点 "${LockNodeName}" 已存在，无需重复创建`);
+                        return; // 如果已存在，直接返回不创建新节点
+                    }
+                }
+
+                // 在视口中心创建锁定节点
+                const x = (canvasContainer.scrollLeft + canvasContainer.clientWidth / 2) / scale - 65;
+                const y = (canvasContainer.scrollTop + canvasContainer.clientHeight / 2) / scale - 35;
+                createNode(x, y, LockNodeName, true); // 传递locked=true
+            }
+
+            // --- Node Creation with Overlap Avoidance ---
+            function findNonOverlappingPosition(initialX, initialY, width = 130, height = 70) {
+                const maxAttempts = 500;
+                const step = Math.max(width, height) * 0.8;
+                const searchRadius = step * 10;
+
+                let candidateX = initialX;
+                let candidateY = initialY;
+                let isValid = false;
+                let attempts = 0;
+
+                const tempNode = { x: candidateX, y: candidateY, width: width, height: height };
+
+                while (attempts < maxAttempts) {
+                    isValid = true;
+                    tempNode.x = candidateX;
+                    tempNode.y = candidateY;
+
+                    for (const [id, existingNode] of nodes) {
+                        if (getOverlapArea(tempNode, existingNode) > 0) {
+                            isValid = false;
+                            break;
+                        }
+                    }
+
+                    if (isValid) {
+                        return { x: candidateX, y: candidateY };
+                    }
+
+                    const angle = attempts * 0.5;
+                    const radius = (attempts * step) / 10;
+                    candidateX = initialX + radius * Math.cos(angle);
+                    candidateY = initialY + radius * Math.sin(angle);
+
+                    attempts++;
+                }
+
+                console.warn("Could not find non-overlapping position after", maxAttempts, "attempts.");
+                return { x: initialX, y: initialY };
+            }
+
+            function disclaimer() {
+                // 添加"仅供参考"提示文本
+                const disclaimer = document.createElement('div');
+                disclaimer.innerHTML = '仅供参考，若此项目不幸成为教材的一部分</br>请向学生强调需要自行思考哪些【问题与结论】适合，并修改不适合的【问题与结论】';
+                disclaimer.style.fontSize = '12px';
+                disclaimer.style.color = 'gray';
+                disclaimer.style.textAlign = 'center';
+                disclaimer.style.marginTop = '10px';
+                return disclaimer;
+            }
+
+            // --- 修改：createNode 函数增加 locked 参数 ---
+            function createNode(x, y, text = '未编辑节点', locked = false) {
+                const nodeId = `node-${nodeIdCounter++}`;
+
+                const finalPosition = findNonOverlappingPosition(x, y);
+                const finalX = finalPosition.x;
+                const finalY = finalPosition.y;
+
+                const nodeElement = document.createElement('div');
+                nodeElement.className = 'node';
+                if (locked) {
+                    nodeElement.classList.add('locked'); // 添加锁定样式
+                }
+                nodeElement.id = nodeId;
+                nodeElement.style.left = `${finalX}px`;
+                nodeElement.style.top = `${finalY}px`;
+                nodeElement.innerHTML = text;
+
+                canvasContainer.appendChild(nodeElement);
+
+                const nodeData = {
+                    element: nodeElement,
+                    id: nodeId,
+                    x: finalX,
+                    y: finalY,
+                    width: nodeElement.offsetWidth,
+                    height: nodeElement.offsetHeight,
+                    isEditing: false,
+                    locked: locked, // 存储锁定状态
+                    // 新增：不可反应属性
+                    nonReactive: false // 默认可以反应
+                };
+
+                nodes.set(nodeId, nodeData);
+                makeNodeInteractive(nodeData);
+
+                // 添加新节点特效
+                addNodeCreationEffect(nodeElement);
+
+                return nodeData;
+            }
+
+            // 创建SWOT分析表格节点的函数
+            function createSWOTNode(x, y, swotData) {
+                const nodeId = `node-${nodeIdCounter++}`;
+                const nodeElement = document.createElement('div');
+                nodeElement.className = 'node';
+                nodeElement.id = nodeId;
+
+                const nodeElementChild = document.createElement('div');
+
+
+                // 创建表格
+                const table = document.createElement('table');
+                table.classList.add('Editable');
+                table.contentEditable = true;
+                table.style.width = '100%';
+                table.style.borderCollapse = 'collapse';
+                table.style.fontSize = '12px';
+
+                // 创建表头
+                const headerRow = document.createElement('tr');
+
+                const th1 = document.createElement('th');
+                th1.textContent = 'Strengths (优势)';
+                th1.style.border = '1px solid #ddd';
+                th1.style.padding = '8px';
+                th1.style.backgroundColor = '#f2f2f2';
+
+                const th2 = document.createElement('th');
+                th2.textContent = 'Weaknesses (劣势)';
+                th2.style.border = '1px solid #ddd';
+                th2.style.padding = '8px';
+                th2.style.backgroundColor = '#f2f2f2';
+
+                headerRow.appendChild(th1);
+                headerRow.appendChild(th2);
+
+                // 创建第一行内容
+                const dataRow1 = document.createElement('tr');
+
+                const td1 = document.createElement('td');
+                // 修改为使用<li>显示列表
+                if (Array.isArray(swotData.strengths)) {
+                    const div1 = document.createElement('div');
+                    swotData.strengths.forEach(item => {
+                        const divItem = document.createElement('div');
+                        divItem.textContent = item;
+                        divItem.className = 'no-label';
+                        div1.appendChild(divItem);
+                    });
+                    td1.appendChild(div1);
+                }
+                td1.style.border = '1px solid #ddd';
+                td1.style.padding = '8px';
+                td1.style.verticalAlign = 'top';
+
+                const td2 = document.createElement('td');
+                // 修改为使用<li>显示列表
+                if (Array.isArray(swotData.weaknesses)) {
+                    const div2 = document.createElement('div');
+                    swotData.weaknesses.forEach(item => {
+                        const divItem = document.createElement('div');
+                        divItem.textContent = item;
+                        divItem.className = 'no-label';
+                        div2.appendChild(divItem);
+                    });
+                    td2.appendChild(div2);
+                }
+                td2.style.border = '1px solid #ddd';
+                td2.style.padding = '8px';
+                td2.style.verticalAlign = 'top';
+
+                dataRow1.appendChild(td1);
+                dataRow1.appendChild(td2);
+
+                // 创建第二行表头
+                const headerRow2 = document.createElement('tr');
+
+                const th3 = document.createElement('th');
+                th3.textContent = 'Opportunities (机会)';
+                th3.style.border = '1px solid #ddd';
+                th3.style.padding = '8px';
+                th3.style.backgroundColor = '#f2f2f2';
+
+                const th4 = document.createElement('th');
+                th4.textContent = 'Threats (威胁)';
+                th4.style.border = '1px solid #ddd';
+                th4.style.padding = '8px';
+                th4.style.backgroundColor = '#f2f2f2';
+
+                headerRow2.appendChild(th3);
+                headerRow2.appendChild(th4);
+
+                // 创建第二行内容
+                const dataRow2 = document.createElement('tr');
+
+                const td3 = document.createElement('td');
+                // 修改为使用<li>显示列表
+                if (Array.isArray(swotData.opportunities)) {
+                    const div3 = document.createElement('div');
+                    swotData.opportunities.forEach(item => {
+                        const divItem = document.createElement('div');
+                        divItem.textContent = item;
+                        divItem.className = 'no-label';
+                        div3.appendChild(divItem);
+                    });
+                    td3.appendChild(div3);
+                }
+                td3.style.border = '1px solid #ddd';
+                td3.style.padding = '8px';
+                td3.style.verticalAlign = 'top';
+
+                const td4 = document.createElement('td');
+                // 修改为使用<li>显示列表
+                if (Array.isArray(swotData.threats)) {
+                    const div4 = document.createElement('div');
+                    swotData.threats.forEach(item => {
+                        const divItem = document.createElement('div');
+                        divItem.textContent = item;
+                        divItem.className = 'no-label';
+                        div4.appendChild(divItem);
+                    });
+                    td4.appendChild(div4);
+                }
+                td4.style.border = '1px solid #ddd';
+                td4.style.padding = '8px';
+                td4.style.verticalAlign = 'top';
+
+                dataRow2.appendChild(td3);
+                dataRow2.appendChild(td4);
+
+                table.appendChild(headerRow);
+                table.appendChild(dataRow1);
+                table.appendChild(headerRow2);
+                table.appendChild(dataRow2);
+                nodeElementChild.appendChild(table);
+
+
+                // 设置节点样式
+                nodeElement.style.left = `${x}px`;
+                nodeElement.style.top = `${y}px`;
+                nodeElement.style.width = '600px';  // 固定宽度
+                nodeElement.style.height = 'auto'; // 固定高度
+                nodeElement.style.overflow = 'auto';
+
+
+                nodeElementChild.appendChild(disclaimer());
+
+                nodeElement.appendChild(nodeElementChild);
+
+                canvasContainer.appendChild(nodeElement);
+
+                const nodeData = {
+                    element: nodeElement,
+                    id: nodeId,
+                    x: x,
+                    y: y,
+                    width: 600,   // 固定宽度
+                    height: 'auto',  // 固定高度
+                    isEditing: false,
+                    locked: true, // 修改：SWOT节点默认锁定不可编辑
+                    // 新增：SWOT节点默认不可反应
+                    nonReactive: true
+                };
+
+                nodes.set(nodeId, nodeData);
+                makeNodeInteractive(nodeData);
+
+                return nodeData;
+            }
+
+            // 创建STP分析表格节点的函数
+            function createSTPNode(x, y, stpData) {
+                const nodeId = `node-${nodeIdCounter++}`;
+                const nodeElement = document.createElement('div');
+                nodeElement.className = 'node';
+                nodeElement.id = nodeId;
+
+                const nodeElementChild = document.createElement('div');
+
+                // 创建表格
+                const table = document.createElement('table');
+                table.classList.add('Editable');
+                table.contentEditable = true;
+                table.style.width = '100%';
+                table.style.borderCollapse = 'collapse';
+                table.style.fontSize = '12px';
+
+                // 封装创建列表元素的函数
+                function createListElement(dataArray) {
+                    const container = document.createElement('td');
+                    if (Array.isArray(dataArray)) {
+                        // 检查是否为字典列表
+                        if (dataArray.length > 0 && typeof dataArray[0] === 'object' && dataArray[0] !== null) {
+                            // 处理字典列表
+                            const listContainer = document.createElement('div');
+                            dataArray.forEach(item => {
+                                const itemDiv = document.createElement('div');
+                                itemDiv.className = 'no-label';
+                                // 将字典对象转换为可读文本
+                                // let itemText = '<div class="folded-corner-card">'
+                                let itemText = `<div class="MultiCard">`
+                                itemText += Object.entries(item).map(([key, value]) => `<div><strong>${key} </strong>- ${value}</div>`).join('');
+                                itemText += '</div>'
+                                itemDiv.innerHTML = itemText;
+                                listContainer.appendChild(itemDiv);
+                            });
+                            container.appendChild(listContainer);
+                        } else {
+                            // 处理普通字符串列表
+                            const listContainer = document.createElement('div');
+                            dataArray.forEach(item => {
+                                const itemDiv = document.createElement('div');
+                                itemDiv.textContent = item;
+                                itemDiv.className = 'no-label';
+                                listContainer.appendChild(itemDiv);
+                            });
+                            container.appendChild(listContainer);
+                        }
+                    }
+                    container.style.border = '1px solid #ddd';
+                    container.style.padding = '8px';
+                    container.style.verticalAlign = 'top';
+                    return container;
+                }
+
+                // 创建表头行
+                const headerRow = document.createElement('tr');
+
+                const th1 = document.createElement('th');
+                th1.textContent = 'Segmentation (市场细分)';
+                th1.style.border = '1px solid #ddd';
+                th1.style.padding = '8px';
+                th1.style.backgroundColor = '#f2f2f2';
+
+                const th2 = document.createElement('th');
+                th2.textContent = 'Targeting (目标选择)';
+                th2.style.border = '1px solid #ddd';
+                th2.style.padding = '8px';
+                th2.style.backgroundColor = '#f2f2f2';
+
+                headerRow.appendChild(th1);
+                headerRow.appendChild(th2);
+                table.appendChild(headerRow);
+
+                // 创建第一行内容
+                const dataRow1 = document.createElement('tr');
+
+                // 使用封装的函数创建列表元素
+                const td1 = createListElement(stpData.segmentation);
+                const td2 = createListElement(stpData.targeting);
+
+                dataRow1.appendChild(td1);
+                dataRow1.appendChild(td2);
+                table.appendChild(dataRow1);
+
+                // 创建第二行表头
+                const headerRow2 = document.createElement('tr');
+
+                const th3 = document.createElement('th');
+                th3.textContent = 'Positioning (市场定位)';
+                th3.style.border = '1px solid #ddd';
+                th3.style.padding = '8px';
+                th3.style.backgroundColor = '#f2f2f2';
+                th3.colSpan = 2; // 跨两列
+
+                headerRow2.appendChild(th3);
+                table.appendChild(headerRow2);
+
+                // 创建第二行内容
+                const dataRow2 = document.createElement('tr');
+
+                // 使用封装的函数创建列表元素
+                const td3 = createListElement(stpData.positioning);
+                td3.colSpan = 2; // 跨两列
+
+                dataRow2.appendChild(td3);
+                table.appendChild(dataRow2);
+
+                nodeElementChild.appendChild(table);
+
+                // 设置节点样式
+                nodeElement.style.left = `${x}px`;
+                nodeElement.style.top = `${y}px`;
+                nodeElement.style.width = '800px';  // 固定宽度
+                nodeElement.style.height = 'auto'; // 固定高度
+                nodeElement.style.overflow = 'auto';
+
+
+                nodeElementChild.appendChild(disclaimer());
+
+                nodeElement.appendChild(nodeElementChild);
+
+                canvasContainer.appendChild(nodeElement);
+
+                const nodeData = {
+                    element: nodeElement,
+                    id: nodeId,
+                    x: x,
+                    y: y,
+                    width: 800,   // 固定宽度
+                    height: 'auto',  // 固定高度
+                    isEditing: false,
+                    locked: true, // 修改：STP节点默认锁定不可编辑
+                    // STP节点默认不可反应
+                    nonReactive: true
+                };
+
+                nodes.set(nodeId, nodeData);
+                makeNodeInteractive(nodeData);
+
+                return nodeData;
+            }
+
+            // 创建竞品分析表格节点的函数
+            function createCompetitiveAnalysisNode(x, y, competitiveData) {
+                const nodeId = `node-${nodeIdCounter++}`;
+                const nodeElement = document.createElement('div');
+                nodeElement.className = 'node';
+                nodeElement.id = nodeId;
+
+                const nodeElementChild = document.createElement('div');
+
+                // 创建表格
+                const table = document.createElement('table');
+                table.classList.add('Editable');
+                table.contentEditable = true;
+                table.style.width = '100%';
+                table.style.borderCollapse = 'collapse';
+                table.style.fontSize = '12px';
+
+                // 封装创建列表元素的函数
+                function createListElement(dataArray) {
+                    const container = document.createElement('td');
+                    if (Array.isArray(dataArray)) {
+                        // 处理普通字符串列表
+                        const listContainer = document.createElement('div');
+                        listContainer.className = 'MultiCard';
+                        dataArray.forEach(item => {
+                            const itemDiv = document.createElement('div');
+                            itemDiv.textContent = item;
+                            itemDiv.className = 'no-label';
+                            listContainer.appendChild(itemDiv);
+                        });
+                        container.appendChild(listContainer);
+                    }
+                    container.style.border = '1px solid #ddd';
+                    container.style.padding = '8px';
+                    container.style.verticalAlign = 'top';
+                    return container;
+                }
+
+                // 创建表头
+                const headerRow = document.createElement('tr');
+
+                const th1 = document.createElement('th');
+                th1.textContent = '分析维度举例';
+                th1.style.border = '1px solid #ddd';
+                th1.style.padding = '8px';
+                th1.style.backgroundColor = '#f2f2f2';
+                th1.style.width = '30%';
+
+                const th2 = document.createElement('th');
+                th2.textContent = '竞品分析举例（参考）';
+                th2.style.border = '1px solid #ddd';
+                th2.style.padding = '8px';
+                th2.style.backgroundColor = '#f2f2f2';
+
+                headerRow.appendChild(th1);
+                headerRow.appendChild(th2);
+                table.appendChild(headerRow);
+
+                // 为每个键值对创建一行
+                Object.entries(competitiveData).forEach(([key, value]) => {
+                    const dataRow = document.createElement('tr');
+
+                    const keyCell = document.createElement('td');
+                    keyCell.textContent = key;
+                    keyCell.style.border = '1px solid #ddd';
+                    keyCell.style.padding = '10px';
+                    keyCell.style.verticalAlign = 'middle';
+                    keyCell.style.fontWeight = 'bold';
+
+                    const valueCell = createListElement(value);
+
+                    dataRow.appendChild(keyCell);
+                    dataRow.appendChild(valueCell);
+                    table.appendChild(dataRow);
+                });
+
+                nodeElementChild.appendChild(table);
+
+                // 设置节点样式
+                nodeElement.style.left = `${x}px`;
+                nodeElement.style.top = `${y}px`;
+                nodeElement.style.width = '600px';
+                nodeElement.style.height = 'auto';
+                nodeElement.style.overflow = 'auto';
+
+                nodeElementChild.appendChild(disclaimer());
+
+                nodeElement.appendChild(nodeElementChild);
+
+                canvasContainer.appendChild(nodeElement);
+
+                const nodeData = {
+                    element: nodeElement,
+                    id: nodeId,
+                    x: x,
+                    y: y,
+                    width: 600,
+                    height: 'auto',
+                    isEditing: false,
+                    locked: true,
+                    nonReactive: true
+                };
+                nodes.set(nodeId, nodeData);
+                makeNodeInteractive(nodeData);
+
+                return nodeData;
+            }
+
+            // 创建CMF分析表格节点的函数
+            function createCMFNode(x, y, cmfData) {
+                const nodeId = `node-${nodeIdCounter++}`;
+                const nodeElement = document.createElement('div');
+                nodeElement.className = 'node';
+                nodeElement.id = nodeId;
+
+                const nodeElementChild = document.createElement('div');
+
+                // 创建表格
+                const table = document.createElement('table');
+                table.classList.add('Editable');
+                table.contentEditable = true;
+                table.style.width = '100%';
+                table.style.borderCollapse = 'collapse';
+                table.style.fontSize = '12px';
+
+                // 封装创建列表元素的函数
+                function createListElement(dataArray) {
+                    const container = document.createElement('td');
+                    if (Array.isArray(dataArray)) {
+                        // 检查是否为字典列表
+                        if (dataArray.length > 0 && typeof dataArray[0] === 'object' && dataArray[0] !== null) {
+                            // 处理字典列表
+                            const listContainer = document.createElement('div');
+                            dataArray.forEach(item => {
+                                const itemDiv = document.createElement('div');
+                                itemDiv.className = 'no-label';
+                                // 将字典对象转换为可读文本
+                                // let itemText = '<div class="folded-corner-card">'
+                                let itemText = `<div class="MultiCard">`
+                                itemText += Object.entries(item).map(([key, value]) => `<div><strong>${key} </strong>- ${value}</div>`).join('');
+                                itemText += '</div>'
+                                itemDiv.innerHTML = itemText;
+                                listContainer.appendChild(itemDiv);
+                            });
+                            container.appendChild(listContainer);
+                        } else {
+                            // 处理普通字符串列表
+                            const listContainer = document.createElement('div');
+                            dataArray.forEach(item => {
+                                const itemDiv = document.createElement('div');
+                                itemDiv.textContent = item;
+                                itemDiv.className = 'no-label';
+                                listContainer.appendChild(itemDiv);
+                            });
+                            container.appendChild(listContainer);
+                        }
+                    }
+                    container.style.border = '1px solid #ddd';
+                    container.style.padding = '8px';
+                    container.style.verticalAlign = 'top';
+                    return container;
+                }
+
+
+                // 创建CMF三行内容
+                // 第一行：颜色
+                const colorRow = document.createElement('tr');
+
+                const colorHeader = document.createElement('th');
+                colorHeader.textContent = 'Color (颜色)';
+                colorHeader.style.border = '1px solid #ddd';
+                colorHeader.style.padding = '8px';
+                colorHeader.style.backgroundColor = '#f2f2f2';
+                colorHeader.style.width = '20%';
+
+                const colorContent = createListElement(cmfData.color);
+
+                colorRow.appendChild(colorHeader);
+                colorRow.appendChild(colorContent);
+                table.appendChild(colorRow);
+
+                // 第二行：材质
+                const materialRow = document.createElement('tr');
+
+                const materialHeader = document.createElement('th');
+                materialHeader.textContent = 'Material (材质)';
+                materialHeader.style.border = '1px solid #ddd';
+                materialHeader.style.padding = '8px';
+                materialHeader.style.backgroundColor = '#f2f2f2';
+                materialHeader.style.width = '20%';
+
+                const materialContent = createListElement(cmfData.material);
+
+                materialRow.appendChild(materialHeader);
+                materialRow.appendChild(materialContent);
+                table.appendChild(materialRow);
+
+                // 第三行：表面处理工艺
+                const finishingRow = document.createElement('tr');
+
+                const finishingHeader = document.createElement('th');
+                finishingHeader.textContent = 'Finishing (表面处理工艺)';
+                finishingHeader.style.border = '1px solid #ddd';
+                finishingHeader.style.padding = '8px';
+                finishingHeader.style.backgroundColor = '#f2f2f2';
+                finishingHeader.style.width = '20%';
+
+                const finishingContent = createListElement(cmfData.finishing);
+
+                finishingRow.appendChild(finishingHeader);
+                finishingRow.appendChild(finishingContent);
+                table.appendChild(finishingRow);
+
+                nodeElementChild.appendChild(table);
+
+                // 设置节点样式
+                nodeElement.style.left = `${x}px`;
+                nodeElement.style.top = `${y}px`;
+                nodeElement.style.width = '600px';  // 固定宽度
+                nodeElement.style.height = 'auto'; // 固定高度
+                nodeElement.style.overflow = 'auto';
+
+                nodeElementChild.appendChild(disclaimer());
+
+                nodeElement.appendChild(nodeElementChild);
+
+                canvasContainer.appendChild(nodeElement);
+
+                const nodeData = {
+                    element: nodeElement,
+                    id: nodeId,
+                    x: x,
+                    y: y,
+                    width: 600,   // 固定宽度
+                    height: 'auto',  // 固定高度
+                    isEditing: false,
+                    locked: true, // CMF节点默认锁定不可编辑
+                    // CMF节点默认不可反应
+                    nonReactive: true
+                };
+
+                nodes.set(nodeId, nodeData);
+                makeNodeInteractive(nodeData);
+
+                return nodeData;
+            }
+
+            // 创建PEST分析表格节点的函数
+            function createPESTNode(x, y, pestData) {
+                const nodeId = `node-${nodeIdCounter++}`;
+                const nodeElement = document.createElement('div');
+                nodeElement.className = 'node';
+                nodeElement.id = nodeId;
+
+                const nodeElementChild = document.createElement('div');
+
+                // 创建表格
+                const table = document.createElement('table');
+                table.classList.add('Editable');
+                table.contentEditable = true;
+                table.style.width = '100%';
+                table.style.borderCollapse = 'collapse';
+                table.style.fontSize = '12px';
+
+                // 创建表头
+                const headerRow = document.createElement('tr');
+
+                const th1 = document.createElement('th');
+                th1.textContent = 'Political (政治)';
+                th1.style.border = '1px solid #ddd';
+                th1.style.padding = '8px';
+                th1.style.backgroundColor = '#f2f2f2';
+
+                const th2 = document.createElement('th');
+                th2.textContent = 'Economic (经济)';
+                th2.style.border = '1px solid #ddd';
+                th2.style.padding = '8px';
+                th2.style.backgroundColor = '#f2f2f2';
+
+                headerRow.appendChild(th1);
+                headerRow.appendChild(th2);
+
+                // 创建第一行内容
+                const dataRow1 = document.createElement('tr');
+
+                const td1 = document.createElement('td');
+                // 修改为使用<div>显示列表
+                if (Array.isArray(pestData.Political)) {
+                    const div1 = document.createElement('div');
+                    pestData.Political.forEach(item => {
+                        const divItem = document.createElement('div');
+                        divItem.textContent = item;
+                        divItem.className = 'no-label MultiCard';
+                        div1.appendChild(divItem);
+                    });
+                    td1.appendChild(div1);
+                }
+                td1.style.border = '1px solid #ddd';
+                td1.style.padding = '8px';
+                td1.style.verticalAlign = 'top';
+
+                const td2 = document.createElement('td');
+                // 修改为使用<div>显示列表
+                if (Array.isArray(pestData.Economic)) {
+                    const div2 = document.createElement('div');
+                    pestData.Economic.forEach(item => {
+                        const divItem = document.createElement('div');
+                        divItem.textContent = item;
+                        divItem.className = 'no-label';
+                        div2.appendChild(divItem);
+                    });
+                    td2.appendChild(div2);
+                }
+                td2.style.border = '1px solid #ddd';
+                td2.style.padding = '8px';
+                td2.style.verticalAlign = 'top';
+
+                dataRow1.appendChild(td1);
+                dataRow1.appendChild(td2);
+
+                // 创建第二行表头
+                const headerRow2 = document.createElement('tr');
+
+                const th3 = document.createElement('th');
+                th3.textContent = 'Social (社会)';
+                th3.style.border = '1px solid #ddd';
+                th3.style.padding = '8px';
+                th3.style.backgroundColor = '#f2f2f2';
+
+                const th4 = document.createElement('th');
+                th4.textContent = 'Technological (技术)';
+                th4.style.border = '1px solid #ddd';
+                th4.style.padding = '8px';
+                th4.style.backgroundColor = '#f2f2f2';
+
+                headerRow2.appendChild(th3);
+                headerRow2.appendChild(th4);
+
+                // 创建第二行内容
+                const dataRow2 = document.createElement('tr');
+
+                const td3 = document.createElement('td');
+                if (Array.isArray(pestData.Social)) {
+                    const div3 = document.createElement('div');
+                    pestData.Social.forEach(item => {
+                        const divItem = document.createElement('div');
+                        divItem.textContent = item;
+                        divItem.className = 'no-label MultiCard';
+                        div3.appendChild(divItem);
+                    });
+                    td3.appendChild(div3);
+                }
+                td3.style.border = '1px solid #ddd';
+                td3.style.padding = '8px';
+                td3.style.verticalAlign = 'top';
+
+                const td4 = document.createElement('td');
+                if (Array.isArray(pestData.Technological)) {
+                    const div4 = document.createElement('div');
+                    pestData.Technological.forEach(item => {
+                        const divItem = document.createElement('div');
+                        divItem.textContent = item;
+                        divItem.className = 'no-label';
+                        div4.appendChild(divItem);
+                    });
+                    td4.appendChild(div4);
+                }
+                td4.style.border = '1px solid #ddd';
+                td4.style.padding = '8px';
+                td4.style.verticalAlign = 'top';
+
+                dataRow2.appendChild(td3);
+                dataRow2.appendChild(td4);
+
+                table.appendChild(headerRow);
+                table.appendChild(dataRow1);
+                table.appendChild(headerRow2);
+                table.appendChild(dataRow2);
+                nodeElementChild.appendChild(table);
+
+                // 设置节点样式
+                nodeElement.style.left = `${x}px`;
+                nodeElement.style.top = `${y}px`;
+                nodeElement.style.width = '600px';  // 固定宽度
+                nodeElement.style.height = 'auto'; // 固定高度
+                nodeElement.style.overflow = 'auto';
+
+                // 添加"仅供参考"提示文本
+                const disclaimer = document.createElement('div');
+                disclaimer.innerHTML = '仅供参考，若不幸成为教材的一部分</br>请向学生强调需要自行思考过哪些结论适合，并修改不适合的结论';
+                disclaimer.style.fontSize = '12px';
+                disclaimer.style.color = 'gray';
+                disclaimer.style.textAlign = 'center';
+                disclaimer.style.marginTop = '10px';
+                nodeElementChild.appendChild(disclaimer);
+
+                nodeElement.appendChild(nodeElementChild);
+
+                canvasContainer.appendChild(nodeElement);
+
+                const nodeData = {
+                    element: nodeElement,
+                    id: nodeId,
+                    x: x,
+                    y: y,
+                    width: 600,   // 固定宽度
+                    height: 'auto',  // 固定高度
+                    isEditing: false,
+                    locked: true, // 修改：PEST节点默认锁定不可编辑
+                    // PEST节点默认不可反应
+                    nonReactive: true
+                };
+
+                nodes.set(nodeId, nodeData);
+                makeNodeInteractive(nodeData);
+
+                return nodeData;
+            }
+
+            function createUserMapNode(x, y, UserMapData) {
+                const nodeId = `node-${nodeIdCounter++}`;
+                const nodeElement = document.createElement('div');
+                nodeElement.className = 'node';
+                nodeElement.id = nodeId;
+                const nodeElementChild = document.createElement('div');
+                const nonePIC = 'data:image/webp;base64,UklGRsAOAABXRUJQVlA4ILQOAABQXwGdASo4BDgEPr1erlCnJaSioTIYQOAXiWlu4XdEhmPvtEL6mHcbrkCxHZmpg7zoEt1gCYxC4wC6moCYxC4wC6moCYxC4wC6moCYxC4wC6moCYxC4wC6moCYxC4wC6moCYxC4wC6moCYxC4wC6moCYxC4wC6moCYxC4wC6moCYxC4wC6moCYxC4wC6moCYxC4wC6moCYxC4wC6moCYxC4wC6moCYxC4wC6moCYxC4wC6moCYxC4wC6moCYxC4wCiaihAdkW+j8LVyYSW9x1gCYxC4wC6moCYxC4wC6moCYxC4wC6moCXiC8Uk1oZ+mMQuMAupqAmMQuMAupqAmMQuMAupqAmMP45w+6BgERwKfSLH3Ora/kQh0IEYC6moCYxC4wC6moCYxC4wC6moCYxC4wCiGwmxW3OsYDGEYLNJMqsweSITDiM1fB1masATGIXGAXU1ATGIXGAXU1ATGIXGAXU0UydGBPFRssYDHjxARpGP9VRxhiBsrdK4aD4xYCBFGJFQPQhcYBdTUBMYhcYBdTUBMYhcYBdTUBMYhTLVhgR7I+NLAc8qNaD4DAVQ9JfJ/5qDzMQ6E8q5jELjALqagJjELjALqagJjELjALqagMmn8gvTMNl4QPsUPTZpAYH2wC9ATGIXGAXU1ATGIXGAXU1ATGIXGAXU08jSTnzJCyA3aCohcYk1nMt7jrAExiFxgF1NQExiFxgF1NQExg5OUDLZ1eSeCZcxi6moCYxH2lMt7jrAExiFxgF1NQExiFxgF1NQEwqKA87iCX77ZIWCK5yIzN7jrAcqSfEW2mW9x1gCYxC4wC6moCYxC4wC6moQyFjELjEtznFVgCYxC4wC6moCYxC4wC6moCYxC4wC6migkW8otPJV/43UI1a/r33vlWvTlwMrrAExiFxgF1NQExiFxgF1NFs1hnW1a96teSOCCHPvsHZZRJd5KuYuJwb6T5wpMPgAktPF607bA6QXgUlyjEEIPDn73m4xj+4zWAJjELjALqagJjELjALpuyr+Ndt+GpepsZGYwxIRlmkxDw1il5Af9m1NPIL6G5EODIAFt1ZJF0iVONcoxIduULjFP89FLcohajwYmGKoJqAmMQuMAupqAmMQuL/sALz1LlBqL2PMYhcnUqYPMNyKJNTy/Oec5DlBWOzQ3fi/JznFzPMgOXnw1iM0sJK6wBMYhcYBdTUBMYhbk5wwkE6b3xJb3HWAJiq/1EkDkmPZSOuRxNVCQVxrbpLM55iPxL5dKFxgF1NQExiFxgF1NFL6lOzcRqagJjELjAKKDrFvlhTmUsscjuPDnHCrWbS06ExiFxgF1NQExiFxgFxGRwWrcashmd1NQExiFxf9L6s8xVHW7viLJYkK45LSYcffFtplvcdYAmMQuMAupp5IYkzWDPfW9x1gCYxC4vQ7o7xoUAu9SagYmQnemMQuMAupqAmMQuL/sASRI8+k0d6YxC4wC6moCXiEHwk8D0BMYhcYBdTUBMYhcYBdTUBLxMDywHEO9MYhcYBdTUBMVGwXCcOoc2OsATGIXGAXU1ATGIXGAXUtcFL+5BHWAJjELjALqagJeFlX2rpvcdYAmMQuMAupqAmMQuMAorvlrCPze46wBMYhcYBdTTyb/q5xEbE70xiFxgF1NQExiFxgF1NFW1XrpTXGAXU1ATGIXGAXTffmPNLkYBdTUBMYhcYBdTUBMYhboaKZbCAupqAmMQuMAupqAiw28FzplvcdYAmMQuMAupqAmMQtz1u9Y8/gCYxC4wC6moCYxC3P/4yYsAupqAmMQuMAupqAmMQuL0+on6wBMYhcYBdTUBMYhTsK7/NmmMQuMAupqAmMQuMAupp//Ow38eYxC4wC6moCYxC4nqKzsk1ATGIXGAXU1ATGIXGAXTec1Tx1gCYxC4wC6moCYqj7/Zb3HWAJjELjALqagJjELieiibfIF1NQExiFxgF1NQEvLSQIfE70xiFxgF1NQExiFxgF1EGOrl1opF1NQExiFxgF1NQEvMmcYEigLqagJjELjALqagJjELjAKPaym57umW9x1gCYxC4wC6lsjQmR3pMYhcYBdTUBMYhcYBdTUBFNbWzqbTLe46wBMYhcYBcUZfL9gwrrAExiFxgF1NQExiFxgF03rSljzmi20y3uOsATGIXF6Mrbu7HtMt7jrAExiFxgF1NQExiFydLVHzGTe6wBMYhcYBdTUBFcCKE37PHWAJjELjALqagJjELjALqWjGWGqAM98TvTGIXGAXU0/+qKCPV/TLe46wBMYhcYBdTUBMYhcYBcRPbu9ZD5j0xiFxgF1NQEvCr14mMUNQExiFxgF1NQExiFxgF1NQExmI9pQQ6DJUYhcYBdTUBMVDWsnZO49x1gCYxC4wC6moCYxC4wC6moCdC6dCHGxzAxj0xiFxgF1NFJkJs5PHK0xiFxgF1NQExiFxgF1NQExiFxgjYoHqfJQWFNe46wBMYhbkwtn/LCjvre46wBMYhcYBdTUBMYhcYBdTUBLw/f15kPMmrs+oCYxC4nERk8m2NQExiFxgF1NQExiFxgF1NQExiFxgGF/Nu4218iSuxVS7xO9F0bfq2GXfsCf5e7aZb3HWAJjELjALqagJjELjALqagJjELc0jOFVw9cXqR+taUbxMTHxa64mY4jdMj3wc0T1JYAmMQuMAupqAmMQuMAupqAmMQuMAupqAmMQuVKQF1NQExiFxgF1NQExiFxgF1NQExiFxgF1NQExiFxgF1NQExiFxgF1NQExiFxgF1NQExh/tbnqCW/LakvxkGmBWQaYFZBpgVkGmBWQaYFZBpgVkCfnLIKeIwWioP5AaqehCr8sKwBMYhcYBdTUBMYhcYBdNk14wK/+WsYvTUkuMAupqAmMQuMGg8FO1x1tgrgFsjLjC/vTGIXGAXU1ATGIXGAUdSI1J//oz67UMgCYxC4wC6moCYxC4wRzbLSchVX6PeAupqAmMQuMAupqAmKiF4XSZP7GAXU1ATGIXGAXU1ATGIUzQcM/fop6rO6moCYxC4wC6moCXhV6rZ8W++LbTLe46wBMYhcYBdTUBMVTwZB3n+N3C6moCYxC4wC6mnkhopEjJ2q8xiFxgF1NQExiFxgF1NQExg6FIM01/YC6moCYxC4wC6boDZyy8wdtMt7jrAExiFxgF1NQExiFxflpIlnE1zLbTLe46wBMYhbllflT4dYAmMQuMAupqAmMQuMAupqAmKiDAmQzVeoxC4wC6moCYqcFME37PHWAJjELjALqagJjELjALqagIp+a/7FWAXU1ATGIXF6LqNGPIrAExiFxgF1NQExiFxgF1NQExh/fJNtHqyHUlXMXGAXU0//wNSAhUmMQuMAupqAmMQuMAupqAmMQuL1CSMxlfELjALqagJjB9dvCD0zGIXGAXU1ATGIXGAXU1ATGIXF/2M9SJAIwC6moCYxC3R4yusATGIXGAXU1ATGIXGAXU1ATGD0ZyTLjALqagJjEG++FEhdlkTvTGIXGAXU1ATGIXGAXU1ATGH954OOYuMAupqAmKo1gIm9MYhcYBdTUBMYhcYBdTUBMYhcT10vEgUt7jrAExiFugEcBZE70xiFxgF1NQExiFxgF1NQExiFOxs3sLjALqagJjB75XhmMQuMAupqAmMQuMAupqAmMQuMAo95m3U1ATGIXGAUfr8OhgF1NQExiFxgF1NQExiFxgF1NQCsrJsKLAExiFxgF03w2YuNrbTLe46wBMYhcYBdTUBMYhcYBdS252W9x0gAAD+/20qcAJ5QAAAAAAAF7e9FPB6d5aDnaEPJlmZencbM7FvO3ldxqufsHMMsdB1n8beyQEzjXIRIdwdQC3o1GeJTjBmXmVwJArwBS2rr/niW7HsMrWnMhQHoD/UntjTPozS4UgvtXuSIDRDVypdQtAJI3R0AoEk8l2MQDsngUIW1Ihs52Mv8fNqiKY0yNklNgQZ53V0USIJXfA25qk/5PkxgHhVfjjnUDgxgY2SiaLPvVC8JnBFXrJ5XdpEC9+VAM2rRC7Y60DzzyDVO3NQYwINBXAFFI6x+kBil205ra4ilfO5s8l4dcrdGLndepX4aLWmMfTPfgPr2snO9faW5EOwyeUFAntG48Ai4t4kpid6A4GASs1Bo3B4PpDyOFos90tTrwIRThcZBp/YGnHwoBc9YFP3DR4i9XX/bGeXGwciXLNojYEWv4e64GpNgaaWyrsD/4w0gOzD9+BASVhBdUYFMyNje8yKZoQ5u2WZDemTCeGX0UCAAA+RlJmSZ0kfQUFHWP49WGMDo1y2iwYYJlhCunOzTJkPEoErdLxAbsil8yvmuyaqTHBLkzaaOnIJADQSe6pcFcElFde0obpZ6yZZisN/m421fFDMlECVN9+UcHULqO1mu8T5Xcl+DxJoqQflq1yLDMKCSwYYQNJaxJyIY2Mpz2/enHX5w9ftvVEEgi/lVzsbCiTfjOpX1nURe0MUaEqlKcPRS0Z7z4x3KSQxq0tYVOkeLDpR+zBZLaTdtWP7zcCFZROBskRTiU+MpJdG+IXNpdRj+aECJLZcR1kfzEXrzPe7FqBuPopsSgCpn40EDFCoTH8z8XEoCPFAnoAAAABK8vZYDvUACQQACIZ0AAAAB4ECqw2ZefhgikAjuAAfVI84aoeJwYEvFDy39sBfCAABMcMKFL03OL289ewDiQOMeAADWb5zJEAAQbnJAAisyagWBxqpbIr7WSmKACvsfetHbAAbwCftekA2J/mwcgAADIm1TJeIwhGJu6Ic3k6SAJ5L6wxmv8eR0pXfReTOzSMKAcBwAkNfdyJFEFlqqMAQaWL0xviFAAAAACcdRCAOokfgJAXSLaDMFuBeYrXEaIAD6Ired95Bv6ZwF7hmPgAAM+geI0hm2stAJ5Bs8X1nms6sQqkDYR4tkn2NBpeImrKC+kgAbz8B3eAAAAACAd4lIAApPA0CAA5CABB5EC2HB+LBdY2AFrHkW2dRIOVAAJzDbcgwBAGRyJMiaBeZ1EeAIg20ADNMNqVHMwAAAA=='
+                // ${ Object.entries(UserMapData.个人信息).map(([key, value]) => `<div><strong>${key}</strong>: ${value}</div>`).join('') }
+                nodeElementChild.innerHTML = `
+                <table class="Editable" contenteditable="true" style="border: 1px solid #000;padding: 10px;text-align: center;">
+                    <tr>
+                        <td style="border-right:  3px solid #999;padding: 10px;"  valign="top">
+                            <table>
+                                <tr>
+                                    <td style="text-align: right;font-size:large;margin-bottom: 20px;"><strong>${UserMapData.人物名字}</strong></td>
+                                </tr>
+                                <tr>
+                                <tr>
+                                    <td style="text-align: left;"><img width=120 height=120 src='${nonePIC}' title="" /></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;"><br>个人信息</td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;min-width:120px">
+                                        <div><strong>职业</strong>: ${UserMapData.个人信息职业}</div>
+                                        <div><strong>年龄</strong>: ${UserMapData.个人信息年龄}</div>
+                                        <div><strong>居住地</strong>: ${UserMapData.个人信息居住地}</div>
+                                        <div><strong>家庭</strong>: ${UserMapData.个人信息家庭}</div>
+                                        <div><strong>爱好</strong>: ${UserMapData.个人信息爱好}</div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                        <td valign="top">
+                            <table>
+                                <tr>
+                                    <td>
+                                        <table style="text-align: left;padding: 10px;">
+                                            <tr>
+                                                <td style='font-size: larger;font-weight: bold;'>${UserMapData.关键特征与概述一句话总结用户目标}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="text-indent: 30px;"><br>${UserMapData.关键特征与概述用户详细故事}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <table style="text-align: left;padding: 10px;">
+                                            <tr>
+                                                <td style="color: #b02875;">用户目标</td>
+                                                <td style="color: #b02875;">产品与品牌态度</td>
+                                                <td style="color: #b02875;">知识和经验</td>
+                                                <td style="color: #b02875;">信息渠道</td>
+                                            </tr>
+                                            <tr>
+                                                <td valign="top" style='min-width:100px;width:25%;border-right:1px soild #ccc' id="Upgoals">${UserMapData.产品认知与态度用户目标.map((value) => `<div>${value}</div>`).join('')}</td>
+                                                <td valign="top" style='min-width:100px;width:25%;border-right:1px soild #ccc' id="Productandbrandattitude">${UserMapData.产品认知与态度产品与品牌态度.map((value) => `<div>${value}</div>`).join('')}</td>
+                                                <td valign="top" style='min-width:100px;width:25%;border-right:1px soild #ccc' id="Knowledgeandexperience">${UserMapData.产品认知与态度知识经验.map((value) => `<div>${value}</div>`).join('')}</td>
+                                                <td valign="top" style='min-width:100px;width:25%;' id="informationchannel">${UserMapData.产品认知与态度信息渠道.map((value) => `<div>${value}</div>`).join('')}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+                `
+
+                // 设置节点样式
+                nodeElement.style.left = `${x}px`;
+                nodeElement.style.top = `${y}px`;
+                nodeElement.style.width = '1000px';  // 固定宽度
+                nodeElement.style.height = 'auto'; // 固定高度
+                nodeElement.style.overflow = 'auto';
+
+                // 添加"仅供参考"提示文本
+                const disclaimer = document.createElement('div');
+                disclaimer.innerHTML = '仅供参考，若不幸成为教材的一部分</br>请向学生强调需要自行思考过哪些结论适合，并修改不适合的结论';
+                disclaimer.style.fontSize = '12px';
+                disclaimer.style.color = 'gray';
+                disclaimer.style.textAlign = 'center';
+                disclaimer.style.marginTop = '10px';
+                nodeElementChild.appendChild(disclaimer);
+
+                nodeElement.appendChild(nodeElementChild);
+
+                canvasContainer.appendChild(nodeElement);
+
+                const nodeData = {
+                    element: nodeElement,
+                    id: nodeId,
+                    x: x,
+                    y: y,
+                    width: 1000,   // 固定宽度
+                    height: 'auto',  // 固定高度
+                    isEditing: false,
+                    locked: true, // 修改：PEST节点默认锁定不可编辑
+                    // PEST节点默认不可反应
+                    nonReactive: true
+                };
+
+                nodes.set(nodeId, nodeData);
+                makeNodeInteractive(nodeData);
+
+                return nodeData;
+            }
+
+            function create5W2HNode(x, y, data) {
+                const nodeId = `node-${nodeIdCounter++}`;
+                const nodeElement = document.createElement('div');
+                nodeElement.className = 'node';
+                nodeElement.id = nodeId;
+
+                const nodeElementChild = document.createElement('div');
+
+                // 创建表格
+                const table = document.createElement('table');
+                table.classList.add('Editable');
+                table.contentEditable = true;
+                table.style.width = '100%';
+                table.style.borderCollapse = 'collapse';
+                table.style.fontSize = '12px';
+
+                // 创建表头
+                const headerRow = document.createElement('tr');
+
+                const th1 = document.createElement('th');
+                th1.textContent = '5W2H';
+                th1.style.border = '1px solid #ddd';
+                th1.style.padding = '8px';
+                th1.style.backgroundColor = '#f2f2f2';
+                th1.style.width = '10%';
+
+                const th2 = document.createElement('th');
+                th2.textContent = '第一层（现状描述）';
+                th2.style.border = '1px solid #ddd';
+                th2.style.padding = '8px';
+                th2.style.backgroundColor = '#f2f2f2';
+                th2.style.width = '15%';
+
+                const th3 = document.createElement('th');
+                th3.textContent = '第二层（为什么？）';
+                th3.style.border = '1px solid #ddd';
+                th3.style.padding = '8px';
+                th3.style.backgroundColor = '#f2f2f2';
+                th3.style.width = '15%';
+
+                const th4 = document.createElement('th');
+                th4.textContent = '第三层（有没有更适合的？）';
+                th4.style.border = '1px solid #ddd';
+                th4.style.padding = '8px';
+                th4.style.backgroundColor = '#f2f2f2';
+                th4.style.width = '15%';
+
+                const th5 = document.createElement('th');
+                th5.textContent = '第四层（为什么是更合适的？）';
+                th5.style.border = '1px solid #ddd';
+                th5.style.padding = '8px';
+                th5.style.backgroundColor = '#f2f2f2';
+                th5.style.width = '15%';
+
+                const th6 = document.createElement('th');
+                th6.textContent = '结论';
+                th6.style.border = '1px solid #ddd';
+                th6.style.padding = '8px';
+                th6.style.backgroundColor = '#f2f2f2';
+                th6.style.width = '30%';
+
+                headerRow.appendChild(th1);
+                headerRow.appendChild(th2);
+                headerRow.appendChild(th3);
+                headerRow.appendChild(th4);
+                headerRow.appendChild(th5);
+                headerRow.appendChild(th6);
+                table.appendChild(headerRow);
+
+                // 定义5W2H数据项
+                const w2hItems = [
+                    { key: 'what', name: 'What', bgColor: '#FFD1DC', conclusionBg: '#FFD1DC' }, // 粉色
+                    { key: 'why', name: 'Why', bgColor: '#D6EAF8', conclusionBg: '#D6EAF8' }, // 浅蓝色
+                    { key: 'who', name: 'Who', bgColor: '#D5F5E3', conclusionBg: '#D5F5E3' }, // 浅绿色
+                    { key: 'when', name: 'When', bgColor: '#FADBD8', conclusionBg: '#FADBD8' }, // 浅粉色
+                    { key: 'where', name: 'Where', bgColor: '#EBDEF0', conclusionBg: '#EBDEF0' }, // 浅紫色
+                    { key: 'how', name: 'How', bgColor: '#FDEBD0', conclusionBg: '#FDEBD0' }, // 浅橙色
+                    { key: 'how_much', name: 'How much', bgColor: '#FCF3CF', conclusionBg: '#FCF3CF' } // 黄色
+                ];
+
+                // 为每个W2H项创建一行
+                w2hItems.forEach((item, index) => {
+                    const row = document.createElement('tr');
+
+                    // 5W2H列（应用背景颜色）
+                    const nameCell = document.createElement('td');
+                    nameCell.textContent = item.name;
+                    nameCell.style.border = '1px solid #ddd';
+                    nameCell.style.padding = '8px';
+                    nameCell.style.backgroundColor = item.bgColor;
+                    nameCell.style.fontWeight = 'bold';
+
+                    // 第一层列
+                    const firstLayerCell = document.createElement('td');
+                    firstLayerCell.textContent = data[item.key] ? data[item.key]["第一层"] : '';
+                    firstLayerCell.style.border = '1px solid #ddd';
+                    firstLayerCell.style.padding = '8px';
+                    firstLayerCell.style.verticalAlign = 'top';
+
+                    // 第二层列
+                    const secondLayerCell = document.createElement('td');
+                    secondLayerCell.textContent = data[item.key] ? data[item.key]["第二层"] : '';
+                    secondLayerCell.style.border = '1px solid #ddd';
+                    secondLayerCell.style.padding = '8px';
+                    secondLayerCell.style.verticalAlign = 'top';
+
+                    // 第三层列
+                    const thirdLayerCell = document.createElement('td');
+                    thirdLayerCell.textContent = data[item.key] ? data[item.key]["第三层"] : '';
+                    thirdLayerCell.style.border = '1px solid #ddd';
+                    thirdLayerCell.style.padding = '8px';
+                    thirdLayerCell.style.verticalAlign = 'top';
+
+                    // 第四层列
+                    const fourthLayerCell = document.createElement('td');
+                    fourthLayerCell.textContent = data[item.key] ? data[item.key]["第四层"] : '';
+                    fourthLayerCell.style.border = '1px solid #ddd';
+                    fourthLayerCell.style.padding = '8px';
+                    fourthLayerCell.style.verticalAlign = 'top';
+
+                    // 结论列（应用结论背景颜色）
+                    const conclusionCell = document.createElement('td');
+                    conclusionCell.textContent = data[item.key] ? data[item.key]["第五层"] : '';
+                    conclusionCell.style.border = '1px solid #ddd';
+                    conclusionCell.style.padding = '8px';
+                    conclusionCell.style.backgroundColor = item.conclusionBg;
+                    conclusionCell.style.fontWeight = 'bold';
+                    conclusionCell.style.textAlign = 'center';
+
+                    row.appendChild(nameCell);
+                    row.appendChild(firstLayerCell);
+                    row.appendChild(secondLayerCell);
+                    row.appendChild(thirdLayerCell);
+                    row.appendChild(fourthLayerCell);
+                    row.appendChild(conclusionCell);
+                    table.appendChild(row);
+                });
+
+                nodeElementChild.appendChild(table);
+
+                nodeElementChild.appendChild(disclaimer());
+
+                nodeElement.appendChild(nodeElementChild);
+
+                // 设置节点样式
+                nodeElement.style.left = `${x}px`;
+                nodeElement.style.top = `${y}px`;
+                nodeElement.style.width = '1000px';  // 增加宽度以适应更多列
+                nodeElement.style.height = 'auto'; // 固定高度
+                nodeElement.style.overflow = 'auto';
+
+                canvasContainer.appendChild(nodeElement);
+
+                const nodeData = {
+                    element: nodeElement,
+                    id: nodeId,
+                    x: x,
+                    y: y,
+                    width: 1000,   // 增加宽度
+                    height: 'auto',  // 固定高度
+                    isEditing: false,
+                    locked: true, // 5W2H节点默认锁定不可编辑
+                    nonReactive: true // 5W2H节点默认不可反应
+                };
+
+                nodes.set(nodeId, nodeData);
+                makeNodeInteractive(nodeData);
+
+                return nodeData;
+            }
+
+            function makeNodeInteractive(nodeData) {
+                const nodeElement = nodeData.element;
+
+                // --- 双击编辑 ---
+                nodeElement.addEventListener('dblclick', (e) => {
+                    if (!activeDragNode) {
+                        startEditing(nodeData);
+                    }
+                    e.stopPropagation();
+                });
+
+                nodeElement.addEventListener('mousedown', (e) => {
+                    // 如果点击节点时有其他节点正在编辑，则先保存其他节点
+                    nodes.forEach(node => {
+                        if (node.isEditing && node.id !== nodeData.id) {
+                            const textarea = node.element.querySelector('textarea');
+                            if (textarea) {
+                                const newText = textarea.value.trim() || '编辑我...';
+                                node.element.classList.remove('editing');
+                                node.element.textContent = newText;
+                                node.isEditing = false;
+                                requestAnimationFrame(() => {
+                                    node.width = node.element.offsetWidth;
+                                    node.height = node.element.offsetHeight;
+                                });
+                            }
+                        }
+                    });
+
+                    if (nodeData.isEditing) return;
+
+                    // 确保拖拽节点始终置顶
+                    maxZIndex++;
+                    nodeElement.style.zIndex = maxZIndex;
+
+                    activeDragNode = nodeData;
+                    activeDragNode.element.classList.add('dragging');
+                    dragStartX = e.clientX;
+                    dragStartY = e.clientY;
+                    e.stopPropagation();
+                });
+
+                // 移动端双击模拟 (简化版)
+                let lastTap = 0;
+                nodeElement.addEventListener('touchend', (e) => {
+                    if (nodeData.isEditing) return;
+                    const currentTime = new Date().getTime();
+                    const tapLength = currentTime - lastTap;
+                    if (tapLength < 300 && tapLength > 0) {
+                        // 双击事件
+                        startEditing(nodeData);
+                        e.preventDefault();
+                    }
+                    lastTap = currentTime;
+                    // e.stopPropagation();
+                });
+
+                // 添加触摸开始事件以处理移动端拖拽置顶
+                nodeElement.addEventListener('touchstart', (e) => {
+                    if (nodeData.isEditing) return;
+
+                    // 确保拖拽节点始终置顶
+                    maxZIndex++;
+                    nodeElement.style.zIndex = maxZIndex;
+
+                    // 对于移动端，我们直接在touchstart中设置拖拽起始点
+                    activeDragNode = nodeData;
+                    activeDragNode.element.classList.add('dragging');
+                    dragStartX = e.touches[0].clientX;
+                    dragStartY = e.touches[0].clientY;
+                    e.stopPropagation();
+                });
+            }
+
+            function startEditing(nodeData) {
+                // --- 修改：锁定节点不可编辑 ---
+                if (nodeData.isEditing || nodeData.locked) return;
+
+                nodeData.isEditing = true;
+                const nodeElement = nodeData.element;
+                nodeElement.classList.add('editing');
+
+                const originalText = nodeElement.textContent;
+                nodeElement.innerHTML = '';
+
+                const textarea = document.createElement('textarea');
+                textarea.value = originalText;
+                // 阻止拖动事件在文本框内触发
+                textarea.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                });
+                textarea.addEventListener('touchstart', (e) => {
+                    e.stopPropagation();
+                });
+                nodeElement.appendChild(textarea);
+                textarea.focus();
+
+                const saveText = () => {
+                    if (nodeData.isEditing) {
+                        nodeData.isEditing = false;
+                        nodeElement.classList.remove('editing');
+                        const newText = textarea.value.trim() || '编辑我...';
+                        nodeElement.textContent = newText;
+                        requestAnimationFrame(() => {
+                            nodeData.width = nodeElement.offsetWidth;
+                            nodeData.height = nodeElement.offsetHeight;
+                        });
+                    }
+                };
+
+                textarea.addEventListener('blur', saveText);
+                textarea.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        saveText();
+                    }
+                });
+
+                // 返回saveText函数，以便外部可以调用
+                return saveText;
+            }
+
+            // --- Overlap and API Logic ---
+            let isApiCallInProgress = false;
+
+            // 新增函数：在拖动过程中检查重叠，但不触发API
+            function checkOverlapDuringDrag(draggedNode) {
+                let isOverlapping = false;
+                let overlappingNode = null;
+
+                for (const [id, otherNode] of nodes) {
+                    if (id !== draggedNode.id) {
+                        const overlapArea = getOverlapArea(draggedNode, otherNode);
+                        if (overlapArea > 0) {
+                            const area1 = getArea(draggedNode);
+                            const area2 = getArea(otherNode);
+                            const minArea = Math.min(area1, area2);
+
+                            // --- 检查 90% 重叠 ---
+                            if (overlapArea / minArea > 0.9) {
+                                // 新增：检查两个节点是否都可反应
+                                if (!draggedNode.nonReactive && !otherNode.nonReactive) {
+                                    isOverlapping = true;
+                                    overlappingNode = otherNode;
+                                    draggedNode.element.classList.add('overlapping');
+                                    otherNode.element.classList.add('overlapping');
+                                    // --- 记录待触发的API调用信息 ---
+                                    pendingApiCall = { nodeA: draggedNode, nodeB: overlappingNode };
+                                    break; // 找到一个即可
+                                }
+                            } else {
+                                // 移除未达到阈值的重叠样式
+                                draggedNode.element.classList.remove('overlapping');
+                                otherNode.element.classList.remove('overlapping');
+                            }
+                        } else {
+                            // 没有重叠时移除样式
+                            draggedNode.element.classList.remove('overlapping');
+                            otherNode.element.classList.remove('overlapping');
+                        }
+                    }
+                }
+
+                // 如果没有重叠，则清除待触发信息
+                if (!isOverlapping) {
+                    pendingApiCall = null;
+                    // 确保所有节点的重叠样式都被清除
+                    nodes.forEach(node => {
+                        if (node.id !== draggedNode.id) {
+                            node.element.classList.remove('overlapping');
+                        }
+                    });
+                }
+            }
+
+            async function callApiAndCreateNodes(nodeA, nodeB) {
+                if (isApiCallInProgress) return; // 防止重复调用
+
+                isApiCallInProgress = true;
+                apiIndicator.style.display = 'block';
+                const nodeAText = nodeA.element.textContent
+                const nodeBText = nodeB.element.textContent
+                // console.log(nodeAText, nodeBText)
+
+
+                // 新增：检查是否有特定内容的锁定节点存在
+                function checkLockedNodeWithContent(content) {
+                    for (const [id, node] of nodes) {
+                        if (node.locked && node.element.textContent === content) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+
+                // 新增：执行新函数的逻辑
+                function executeNewFunction(content) {
+                    if (content == '联想关键词' || content == '工业设计分析维度') {
+                        unlockNode('STP战略、竞品分析')
+                        addLockedNode('STP战略')
+                        addLockedNode('竞品分析')
+                        // addLockedNode('直接回答节点')
+                    }
+                    if (content == 'STP战略') {
+                        unlockNode('SWOT、PEST')
+                        addLockedNode('SWOT')
+                        addLockedNode('PEST')
+                        addLockedNode('5W2H')
+                    }
+                    // if (content == 'SWOT' || content == 'PEST') {
+                    //     unlockNode('竞品分析')
+                    //     addLockedNode('竞品分析')
+                    // }
+                    if (content == '竞品分析') {
+                        unlockNode('新兴技术、用户画像、CMF')
+                        addLockedNode('新兴技术')
+                        addLockedNode('用户画像')
+                        addLockedNode('CMF')
+                    }
+                    // if (content == '用户画像') {
+                    //     unlockNode('CMF')
+                    //     addLockedNode('CMF')
+                    // }
+                }
+
+                // 新增：检查两个参与反应的节点内容，判断是否有对应的锁定节点
+                if (checkLockedNodeWithContent(nodeAText)) {
+                    executeNewFunction(nodeAText);
+                }
+
+                if (checkLockedNodeWithContent(nodeBText)) {
+                    executeNewFunction(nodeBText);
+                }
+
+                try {
+                    // 修复：正确等待API响应
+                    const simulatedApiResponse = await getApiResponse([nodeAText, nodeBText]);
+
+                    // console.log(simulatedApiResponse, getType(simulatedApiResponse) === 'object')
+                    // 检查返回的数据类型，如果是对象（字典）则按SWOT表格处理
+                    if (getType(simulatedApiResponse) === 'object') {
+                        // 创建SWOT分析表格节点
+                        const centerX = (nodeA.x + nodeA.width / 2 + nodeB.x + nodeB.width / 2) / 2;
+                        const centerY = (nodeA.y + nodeA.height / 2 + nodeB.y + nodeB.height / 2) / 2;
+                        if ([nodeAText, nodeBText].includes('SWOT')) {
+                            // 创建包含SWOT表格的节点
+                            createSWOTNode(centerX - 150, centerY - 100, simulatedApiResponse);
+                        }
+                        else if ([nodeAText, nodeBText].includes('PEST')) {
+                            createPESTNode(centerX - 150, centerY - 100, simulatedApiResponse);
+                        }
+                        else if ([nodeAText, nodeBText].includes('STP战略')) {
+                            createSTPNode(centerX - 150, centerY - 100, simulatedApiResponse);
+                        }
+                        else if ([nodeAText, nodeBText].includes('CMF')) {
+                            createCMFNode(centerX - 150, centerY - 100, simulatedApiResponse);
+                        }
+                        else if ([nodeAText, nodeBText].includes('用户画像')) {
+                            createUserMapNode(centerX - 150, centerY - 100, simulatedApiResponse);
+                        }
+                        else if ([nodeAText, nodeBText].includes('竞品分析')) {
+                            createCompetitiveAnalysisNode(centerX - 150, centerY - 100, simulatedApiResponse);
+                        }
+                        else if ([nodeAText, nodeBText].includes('5W2H')) {
+                            console.log('5W2H')
+                            console.log(simulatedApiResponse)
+                            create5W2HNode(centerX - 150, centerY - 100, simulatedApiResponse);
+                        }
+                        // return;
+                    } else {
+                        // 新增：常规列表去重
+                        const existingNodeTexts = Array.from(nodes.values()).map(node => node.element.textContent);
+                        const uniqueNewNodes = simulatedApiResponse.filter(text => !existingNodeTexts.includes(text));
+
+                        // 如果所有新节点都重复，则显示提示信息
+                        if (uniqueNewNodes.length === 0) {
+                            // 创建提示元素
+                            const noIdeaIndicator = document.createElement('div');
+                            noIdeaIndicator.textContent = '南神没思路了，请你自行思考，加油';
+                            noIdeaIndicator.style.position = 'fixed';
+                            noIdeaIndicator.style.top = '70px';
+                            noIdeaIndicator.style.right = '20px';
+                            noIdeaIndicator.style.padding = '10px 15px';
+                            noIdeaIndicator.style.backgroundColor = '#fffbe6';
+                            noIdeaIndicator.style.border = '1px solid #ffe58f';
+                            noIdeaIndicator.style.borderRadius = '8px';
+                            noIdeaIndicator.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+                            noIdeaIndicator.style.fontSize = '14px';
+                            noIdeaIndicator.style.color = '#d48806';
+                            noIdeaIndicator.style.zIndex = '1002';
+                            noIdeaIndicator.id = 'no-idea-indicator';
+
+                            document.body.appendChild(noIdeaIndicator);
+
+
+                            // 3秒后自动隐藏提示
+                            setTimeout(() => {
+                                if (noIdeaIndicator.parentNode) {
+                                    noIdeaIndicator.parentNode.removeChild(noIdeaIndicator);
+                                }
+                            }, 3000);
+
+                            return; // 直接返回，不创建新节点
+                        }
+
+                        const newNodes = [];
+                        // 计算两个重叠节点的中心点 (世界坐标)
+                        const centerX = (nodeA.x + nodeA.width / 2 + nodeB.x + nodeB.width / 2) / 2;
+                        const centerY = (nodeA.y + nodeA.height / 2 + nodeB.y + nodeB.height / 2) / 2;
+
+                        const radius = 150;
+
+                        // 逐个创建节点并检查重叠 (修改处理逻辑以适应新的数据格式)
+                        // 使用过滤后的内容创建节点
+                        uniqueNewNodes.forEach((text, index) => {
+                            const angle = (index / uniqueNewNodes.length) * 2 * Math.PI;
+
+                            // 先创建节点以获取实际尺寸
+                            let proposedX = centerX + radius * Math.cos(angle) - 65;
+                            let proposedY = centerY + radius * Math.sin(angle) - 35;
+
+                            // 创建一个临时数组，包含所有现有节点和已经创建的新节点
+                            const allNodes = Array.from(nodes.values()).concat(newNodes);
+
+                            // 先创建节点以获取实际尺寸
+                            const tempNode = createNode(proposedX, proposedY, text);
+                            newNodes.push(tempNode);
+
+                            // 然后检查重叠并调整位置
+                            let hasOverlap = false;
+                            let attempts = 0;
+                            const maxAttempts = 100;
+
+                            do {
+                                hasOverlap = false;
+
+                                // 检查与所有现有节点的重叠情况
+                                for (const existingNode of allNodes) {
+                                    if (getOverlapArea(tempNode, existingNode) > 0) {
+                                        hasOverlap = true;
+                                        break;
+                                    }
+                                }
+
+                                if (hasOverlap) {
+                                    // 调整位置
+                                    const newAngle = (index / uniqueNewNodes.length) * 2 * Math.PI + (attempts * 0.5);
+                                    const newRadius = radius + attempts * 20;
+                                    tempNode.x = centerX + newRadius * Math.cos(newAngle) - tempNode.width / 2;
+                                    tempNode.y = centerY + newRadius * Math.sin(newAngle) - tempNode.height / 2;
+
+                                    // 更新节点位置
+                                    tempNode.element.style.left = `${tempNode.x}px`;
+                                    tempNode.element.style.top = `${tempNode.y}px`;
+
+                                    attempts++;
+                                }
+                            } while (hasOverlap && attempts < maxAttempts);
+                        });
+                        // --- 仅以新生成的节点为中心进行移动 ---
+                        centerViewOnNodes(newNodes);
+                    }
+                } catch (error) {
+                    console.error('API调用失败:', error);
+                    apiIndicatorFailed.style.display = 'block';
+                    setTimeout(() => {
+                        apiIndicatorFailed.style.display = 'none';
+                    }, 3000);
+                } finally {
+                    apiIndicator.style.display = 'none';
+                    isApiCallInProgress = false;
+                }
+            }
+
+            // --- Initial Setup ---
+            createNode(200, 150, '双击编辑内容');
+            createNode(200, 200, '工业设计分析维度', 1);
+            createNode(300, 200, '联想关键词', 1);
+            // addLockedNode(LockNodeName)添加锁定节点
+            // 用户群体，市场背景，成本，意义，前沿设计理念，产品附加值
+            // SWOT，PEST
+            // 色彩、材料、表面处理
+            // AI+、T
+
+            // --- Add Wheel Listener for Zoom ---
+            body.addEventListener('wheel', handleWheel, { passive: false });
+
+            // --- 添加抖动动画样式 ---
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    25% { transform: translateX(-5px); }
+                    75% { transform: translateX(5px); }
+                }
+            `;
+            document.head.appendChild(style);
+
+            // --- 初始隐藏操作说明 ---
+            const instructions = document.querySelector('.instructions');
+            const instructionsHeader = instructions.querySelector('h3');
+
+            // 添加折叠/展开功能
+            instructionsHeader.style.cursor = 'pointer';
+            instructionsHeader.addEventListener('click', () => {
+                const content = instructions.querySelector('ul');
+                if (content.style.display === 'none') {
+                    content.style.display = 'block';
+                    instructionsHeader.textContent = '操作说明 ▼';
+                } else {
+                    content.style.display = 'none';
+                    instructionsHeader.textContent = '操作说明 ▲';
+                }
+            });
+
+            // 初始化为展开状态
+            // instructionsHeader.textContent = '操作说明 ▼';
+            // 初始化为折叠状态
+            instructionsHeader.textContent = '操作说明 ▲';
+            instructions.querySelector('ul').style.display = 'none';
+        });
+
+        function getType(value) {
+            if (value === null) {
+                return 'null';
+            } else if (Array.isArray(value)) {
+                return 'array';
+            } else if (typeof value === 'object') {
+                return 'object';
+            } else {
+                return typeof value;
+            }
+        }
+
+        // 修复：使函数返回Promise以正确处理异步操作
+        function getApiResponse(message) {
+            return new Promise((resolve, reject) => {
+                function defaultMessageKeyWord(message) {
+                    return `我是工业设计师，请基于关键词 [${message}]，
+为我推荐 5 到 10 个最相关、最具调研价值与设计启发性的扩展关键词或短语，（最多不超过 10 个）
+0、当关键词【${message[0]}与${message[1]}】中存在【分析、判断、研究、设计、优化、评价、应用】等关键词时，直接对回答该问题的答案。
+2、当两个关键词【${message[0]}与${message[1]}】存在转折关系、假设关系、并列关系、递进关系、选择关系、因果关系、条件关系、承接关系时，直接输出结果答案。
+3、高启发性：能激发设计思考、打开创新维度，避免陈词滥调或泛泛之词。
+要求：请直接以 JSON 格式输出一个列表，禁止出现列表嵌套，格式为：
+\`\`\`json
+[]
+\`\`\``.replace(/\n/g, '')
+
+
+                    //                     `
+                    // 我是一名工业设计师，目前正在为品类进行前期调研与设计方向探索。
+
+                    // 请基于关键词 [${message}]，为我推荐 3 到 7 个最相关、最具调研价值与设计启发性的扩展关键词或短语（最多不超过 10 个）。要求：
+
+                    // 强专业相关：每个词必须紧密围绕“${message}”两个或多个关键词，能直接用于用户研究、趋势分析、CMF探索、结构创新或设计定位。且能直接应用于工业设计全流程关键环节——用户研究环节需关联特定人群的具体行为偏好与生理/心理需求，竞品分析环节需指向垂直领域内产品的功能差异与技术参数对比，CMF探索环节需对应特定场景下的材质特性选型、色彩情感适配与表面处理工艺需求，结构创新环节需契合特定使用人群的人体工学适配、使用场景的环境适应性与核心功能的稳定性优化，设计定位环节需明确细分人群的差异化需求满足与细分市场的独特价值主张；
+                    // 调研导向：词汇应具备调研关键词属性，可用于搜索文献、竞品分析、设计案例、用户痛点或技术趋势。
+                    // 高启发性：能激发设计思考、打开创新维度，避免陈词滥调或泛泛之词。需聚焦多维度细分方向——人群维度需覆盖不同年龄层、职业类型、生理特征、行为习惯的精准界定，场景维度需包含具体使用环境、使用目的、使用时段、使用工况的明确划分，功能维度需涉及核心功能延伸、特殊需求满足、使用体验优化的深度挖掘，且每个扩展词需能够引导设计人员从材质、结构、交互、形态、功能等多维度产生创新性思考，推动设计方案向差异化、精细化方向发展；
+                    // 精准克制：宁可少，不可滥。拒绝与原始词重复或彼此语义重叠。不分类、不分组，只输出最精华的3-7个词。
+                    // 最重要的是：分析两个关键词并揭示出潜在的设计方向。
+                    // 请直接以 JSON 格式输出一个列表，禁止出现列表嵌套，格式为：
+                    // \`\`\`json
+                    // []
+                    // \`\`\`
+                    //                 `.replace(/\n/g, '')
+                }
+                function defaultMessagePEST(message) {
+                    return `请为以下关键词生成一个详细的“基于市场环境分析的PESTEL”分析：[${message}]。分析应分为四个部分：
+Political (政治)：列出2-5个关键点，基于市场环境分析行业政策趋势。用简洁但包含数据支撑的描述性短语表述，避免抽象术语，确保内容可验证且逻辑连贯，用简明扼要的关键词清晰表述。
+Economic (经济)：列出2-5个关键点，基于市场环境分析宏观经济数据。用简明但包含量化细节的描述性短语表述，确保内容基于最新权威数据且实用，用简明扼要的关键词清晰表述。
+Social (社会)：列出2-5个关键点，基于市场环境分析消费行为变化。用描述性短语清晰呈现行为与商业影响的关联，避免泛泛而谈，用简明扼要的关键词清晰表述。
+Technological (技术)：列出2-5个关键点，基于市场环境分析技术应用进展。用技术细节与实证效果结合的描述性短语表述，确保内容前沿且可操作，用简明扼要的关键词清晰表述。
+每个点需基于行业常识，避免模糊描述，确保内容具体、实用且逻辑连贯。
+
+请直接以 JSON 格式输出一个列表，禁止出现列表嵌套，格式为：
+\`\`\`json
+{
+    "Political": [],
+    "Economic": [],
+    "Social": [],
+    "Technological": [],
+}
+\`\`\``.replace(/\n/g, '')
+                }
+                function defaultMessageSWOT(message) {
+                    return `请为以下关键词生成一个详细的基于产品品类的SWOT分析：[${message}]。分析应分为四个部分：
+
+Strengths（优势）：列出2-5个关键优势，用简明扼要的关键词清晰表述
+Weaknesses（劣势）：列出2-5个关键劣势，用简明扼要的关键词清晰表述
+Opportunities（机会）：列出2-5个关键机会，用简明扼要的关键词清晰表述
+Threats（威胁）：列出2-5个关键威胁，用简明扼要的关键词清晰表述
+每个点需基于行业常识，简明扼要，避免模糊描述，确保内容具体、实用且逻辑连贯。
+
+请直接以 JSON 格式输出一个列表，禁止出现列表嵌套，格式为：
+\`\`\`json
+{
+    "strengths": [],
+    "weaknesses": [],
+    "opportunities": [],
+    "threats": []
+}
+\`\`\``.replace(/\n/g, '')
+                }
+                function defaultMessageSTP(message) {
+                    return `请为以下关键词生成一个详尽的STP分析：[${message}]。分析应分为三个部分，每部分需基于行业常识和市场逻辑，内容具体、结构清晰、可直接用于营销战略制定：
+
+Segmentation（市场细分）：
+列出2-5个目标客户细分群体。每个群体需明确描述其人口特征、地理分布、心理特征及行为特征。避免笼统分类，确保细分维度具有商业可操作性，用简明扼要的关键词清晰表述。
+Targeting（目标市场选择）：
+从上述细分中选择1-3个最具潜力的目标市场。对每个选定市场说明选择理由，包括目标市场、市场规模、增长潜力、竞争强度。需体现战略取舍，避免‘全覆盖’式描述，用简明扼要的关键词清晰表述。
+Positioning（市场定位）：
+为选定的目标市场明确品牌或产品的核心定位。每条定位需包含价值主张、差异化支撑点及竞争参照系。表达应简洁有力，适合转化为对外传播口号，用简明扼要的关键词清晰表述。
+
+请直接以 JSON 格式输出，禁止嵌套列表，格式为：
+\`\`\`json
+{
+  "segmentation": [
+  {'人口特征':'','地理分布':'','心理特征':'','行为特征':''}
+  ],
+  "targeting": [
+    {'目标市场':'','市场规模':'','增长潜力':'','竞争强度':''}
+  ],
+  "positioning": [
+    {'市场定位':'','价值主张':'','差异化支撑点':'','竞争参照系':''}
+  ]
+}\`\`\``.replace(/\n/g, '')
+                }
+                function defaultMessageCMF(message) {
+                    return `请为以下关键词生成一个专业的CMF分析：[${message}]。
+分析应围绕色彩（Color）、材料（Material）、表面处理（Finishing）三个维度，针对产品设计或品牌形象进行系统性阐述，内容需具备行业前瞻性、美学判断力与工程可行性，适用于消费品、电子产品、家居或交通工具等领域。
+
+输出要求：
+- 每个维度（Color、Material、Finishing）分别列出2-4项具体建议。
+- 每项建议需包含：
+  a) 具体方案（如色彩名称/潘通色号、材料类型、工艺名称）；
+  b) 设计意图（传达何种情绪、风格或品牌价值）；
+  c) 市场依据（基于当前趋势报告、用户偏好或竞品分析）；
+  d) 可行性说明（成本区间、加工难度、可持续性表现）。
+
+具体结构如下：
+
+- Color（色彩）：
+  建议选择2-4种主色或配色方案。需说明色彩心理学依据、季节性趋势（如Pantone年度色）、目标用户审美偏好及品牌识别一致性。避免使用‘明亮色’‘柔和色’等模糊描述，应具体到色系或色号。
+
+- Material（材料）：
+  建议选用2-4种核心材料。明确材料类别（如生物基塑料、再生铝、植物皮革）、性能优势（轻量化、耐用性、触感）、环保属性（可回收率、碳足迹）及供应链稳定性。
+
+- Finishing（表面处理）：
+  建议应用2-4种表面工艺。说明工艺类型（如磨砂喷漆、拉丝、纳米镀层）、视觉与触觉效果（防指纹、哑光质感、纹理深度）、耐久性表现及与整体设计语言的匹配度。
+
+每项为一段完整、专业且可执行的描述，确保CMF方案在美学、功能与商业之间取得平衡。
+请直接以 JSON 格式输出，禁止嵌套列表，格式为：
+\`\`\`json
+{
+  "color": [{'具体方案':'','设计意图':'','市场依据':'','可行性说明':''},……],
+  "material": [{'具体方案':'','设计意图':'','市场依据':'','可行性说明':''},……],
+  "finishing": [{'具体方案':'','设计意图':'','市场依据':'','可行性说明':''},……]
+}
+\`\`\``.replace(/\n/g, '')
+                }
+                function defaultMessageUserMap(message) {
+                    return `
+你是一个用户画像专家，根据输入创建精准用户画像。产品类别为【${message}】
+1. 用户需要一个明确的用户画像，以便于他们能够更准确地定位目标客户群体。
+2. 他们需要了解目标客户的基本信息，如年龄、性别、职业等。
+3. 用户还需要知道目标客户的兴趣、爱好、消费习惯等信息。
+4. 他们需要了解目标客户的需求和痛点，以便提供更符合他们需求的产品或服务。
+5. 用户希望通过这份用户画像，能够更好地进行市场分析和产品定位。
+
+情感和需求，一般可以通过以下几个方面进行描述:
+用户目标:
+他们使用该产品的目标是什么?
+除了主要目标外还有其他隐形需求吗?
+产品与品牌态度:
+他们对于这类产品的总的态度如何?
+在选购这类产品时是否特别关注品牌?
+对哪些品牌特别在意?
+他们对于此类产品有何期望?
+有些什么样的特殊需求?
+知识经验:
+他们是初次使用吗?
+他们对这类产品有怎样的认知?
+与该类产品相关的知识和经验中有哪些值得设计师注意的?
+信息渠道:
+他们一般通过哪些渠道获取产品信息和评价?
+哪些信息源对他们的影响最大?
+他们更在意哪些地方的广告?
+
+（定语+名字）人物名字
+个人信息
+    职业
+    年龄
+    居住地
+    家庭
+    爱好
+关键特征与概述
+【用户故事要求详细描述用户故事（为什么要这个目标，我们的产品能解决什么痛点）】
+产品认知与态度
+    用户目标
+    产品与品牌态度
+    知识经验
+    信息渠道
+产品认知与态度的每个小点列表至少输出3~7点
+【人物名字要求输出（定语+名字）例如：活泼好动的老李】
+
+根据我提供的产品信息，生成最合适的人物名字（形容词+名字）
+产品认知与态度的每个小点需要尽可能细，分点又多
+
+14. 输出json格式：
+\`\`\`json
+{
+  "人物名字":"形容词+名字（如：活力科技男小明）",
+   "个人信息职业":"",
+   "个人信息年龄":"string",
+   "个人信息居住地":"",
+   "个人信息家庭":"",
+   "个人信息爱好":""，
+   "关键特征与概述一句话总结用户目标":"",
+   "关键特征与概述用户详细故事":""，
+   "产品认知与态度用户目标":[],
+   "产品认知与态度产品与品牌态度":[],
+   "产品认知与态度知识经验":[],
+   "产品认知与态度信息渠道":[]
+}
+}\`\`\``.replace(/\n/g, '')
+                }
+                function defaultMessageCompetitiveAnalysis(message) {
+                    return `
+请为以下关键词生成一个基于工业设计方向的专业的竞品分析：[${message}]。
+分析应围绕用户体验维度、产品形态与设计维度、产品功能与技术维度三个维度，针对产品设计或品牌形象进行系统性阐述，内容需具备行业前瞻性、美学判断力与工程可行性，适用于消费品、电子产品、家居或交通工具等领域。
+
+- 每个维度（用户体验维度、产品形态与设计维度、产品功能与技术维度）分别列出3-7项具体的关键词,最多不超过10个。
+
+1. 用户体验维度
+使用场景：竞品在哪些场景下被使用？如何适配特定场景，用简明扼要的关键词清晰表述
+用户行为习惯：竞品如何设计操作流程以符合用户习惯，用简明扼要的关键词清晰表述
+情感需求：竞品如何通过设计满足情感诉求，用简明扼要的关键词清晰表述
+2. 产品形态与设计维度
+外观设计：产品造型、色彩搭配、材质选择，用简明扼要的关键词清晰表述
+人因工程：产品是否符合人体工学，用简明扼要的关键词清晰表述
+创新点：竞品的差异化设计点，用简明扼要的关键词清晰表述
+3. 产品功能与技术维度
+核心功能：竞品满足了用户哪些关键需求，用简明扼要的关键词清晰表述
+功能流程：竞品的业务流程设计如何，用简明扼要的关键词清晰表述
+技术创新：竞品采用了哪些新技术，用简明扼要的关键词清晰表述
+可持续发展: 竞品如何实现可持续发展，如材料包装能耗等。用简明扼要的关键词清晰表述
+
+请直接以 JSON 格式输出，禁止嵌套列表，列表内的所有元素都是字符串，格式为：
+\`\`\`json
+{
+  "使用场景": [""],
+  "用户行为习惯": [""],
+  "情感需求": [""],
+  "外观设计": [""],
+  "情人因工程": [""],
+  "创新点": [""],
+  "核心功能": [""],
+  "功能流程": [""],
+  "技术创新": [""],
+  "可持续发展": [""]
+}
+\`\`\``.replace(/\n/g, '')
+                }
+                function defaultMessageAnswer(message) {
+                    return `我是工业设计师，请基于产品设计/工业设计的思维分析并回答问题：【${message}】，用简明扼要的关键词清晰表述
+为我推荐 5 到 10 个最相关、最具调研价值与设计启发性的【回答问题所生成的答案】，（最多不超过 10 个）
+要求：请直接以 JSON 格式输出一个列表，禁止出现列表嵌套，格式为：
+\`\`\`json
+[]
+\`\`\``.replace(/\n/g, '')
+                }
+                function defaultMessage5W2H(message) {
+                    return `
+请针对以下产品或项目进行5W2H分析：[${message}]。分析需基于工业设计视角，结合竞品洞察与用户需求，采用SW2H多层递进框架（参考SW2H模型），深入挖掘设计机会点。
+每个问题需分四层展开：第一层为现状描述（What/Why/Who/When/Where/How/How much），
+第二层为本质追问（为什么是这件事？为什么选这个原因？为什么是这人？为什么是这个时间？为什么是这个地方？为什么用这种方法？为什么花这么多资源？），
+第三层为优化路径（有没有更适合的选项？有没有更合适的理由？有没有更合适的人群？有没有更合适的时间？有没有更合适的场景？有没有更好的方法？有没有更合理的成本？），
+第四层为理想状态（为什么是最合适的选择？为什么是最优的理由？为什么是最匹配的人群？为什么是最优的时间？为什么是最优的场景？为什么是最优的方法？为什么是最优的成本？）。
+第五层总结每项的核心结论（定事、定因、定人、定时、定位、定法、定费），形成可执行的设计策略：
+分别结合1~4层分析定事What（做什么），得到第五层结论
+分别结合1~4层分析定因Why（为什么），得到第五层结论
+分别结合1~4层分析定人Who（为谁设计），得到第五层结论
+分别结合1~4层分析定时When（何时使用），得到第五层结论
+分别结合1~4层分析定时When（何时使用），得到第五层结论
+分别结合1~4层分析定位Where（何处使用），得到第五层结论
+分别结合1~4层分析定法How（怎么做），得到第五层结论
+分别结合1~4层分析定费How much（多少资源），得到第五层结论
+
+What（做什么）：
+- 第一层：
+- 第二层：
+- 第三层：
+- 第四层：
+- 第五层:
+
+Why（为什么）：
+- 第一层：
+- 第二层：
+- 第三层：
+- 第四层：
+- 第五层:
+
+Who（为谁设计）：
+- 第一层：
+- 第二层：
+- 第三层：
+- 第四层：
+- 第五层:
+
+When（何时使用）：
+- 第一层：
+- 第二层：
+- 第三层：
+- 第四层：
+- 第五层:
+
+Where（何处使用）：
+- 第一层：
+- 第二层：
+- 第三层：
+- 第四层：
+- 第五层:
+
+How（怎么做）：
+- 第一层：
+- 第二层：
+- 第三层：
+- 第四层：
+- 第五层:
+
+How much（多少资源）：
+- 第一层：
+- 第二层：
+- 第三层：
+- 第四层：
+- 第五层:
+
+请直接以 JSON 格式输出，禁止嵌套列表，格式为：
+\`\`\`json
+{
+    "what": {
+        "第一层": "",
+        "第二层": "",
+        "第三层": "",
+        "第四层": "",
+        "第五层": ""
+    },
+    "why": {
+        "第一层": "",
+        "第二层": "",
+        "第三层": "",
+        "第四层": "",
+        "第五层": ""
+    },
+    "who": {
+        "第一层": "",
+        "第二层": "",
+        "第三层": "",
+        "第四层": "",
+        "第五层": ""
+    },
+    "when": {
+        "第一层": "",
+        "第二层": "",
+        "第三层": "",
+        "第四层": "",
+        "第五层": ""
+    },
+    "where": {
+        "第一层": "",
+        "第二层": "",
+        "第三层": "",
+        "第四层": "",
+        "第五层": ""
+    },
+    "how": {
+        "第一层": "",
+        "第二层": "",
+        "第三层": "",
+        "第四层": "",
+        "第五层": ""
+    },
+    "how_much": {
+        "第一层": "",
+        "第二层": "",
+        "第三层": "",
+        "第四层": "",
+        "第五层": ""
+    }
+}
+\`\`\`
+`.replace(/\n/g, '')
+                }
+                let messages = '';
+                if (message.includes('SWOT')) {
+                    messages = defaultMessageSWOT(message);
+                } else if (message.includes('PEST')) {
+                    messages = defaultMessagePEST(message);
+                } else if (message.includes('STP战略')) {
+                    messages = defaultMessageSTP(message);
+                } else if (message.includes('CMF')) {
+                    messages = defaultMessageCMF(message);
+                } else if (message.includes('用户画像')) {
+                    messages = defaultMessageUserMap(message);
+                } else if (message.includes('竞品分析')) {
+                    messages = defaultMessageCompetitiveAnalysis(message);
+                } else if (message.includes('直接回答节点')) {
+                    messages = defaultMessageAnswer(message);
+                } else if (message.includes('5W2H')) {
+                    messages = defaultMessage5W2H(message);
+                } else {
+                    messages = defaultMessageKeyWord(message);
+                }
+                // 1. 使用 encodeURIComponent 确保参数正确编码
+                const encodedMessage = encodeURIComponent(messages);
+                const apiUrl = `https://api.pearktrue.cn/api/xfai/?message=${encodedMessage}`;
+                var startTime = new Date().getTime();  // 获取当前时间的时间戳
+                guaid3 += 1;
+                // console.log(`guaid3`)
+                if (guaid3 == 1) {
+                    guaidance3()
+                }
+                // 2. 使用 fetch API 发送请求
+                fetch(apiUrl)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                        var endTime = new Date().getTime();  // 获取运行结束的时间戳
+                        var runTime = endTime - startTime;  // 计算运行时间，单位为毫秒
+                        console.log('得到结果运行时间为：' + runTime + '毫秒');
+
+                        return response.json();
+                    })
+                    .then(data => {
+                        // 3. 显示API返回的JSON数据
+                        console.error('调用结果', data);
+                        // 修复：正确解析返回的数据
+                        const answer = JSON.parse(data.data.answer.replace('```json', '').replace('```', ''));
+                        // 运行需要计时的代码
+                        var endTime = new Date().getTime();  // 获取运行结束的时间戳
+                        var runTime = endTime - startTime;  // 计算运行时间，单位为毫秒
+                        console.log('处理结束运行时间为：' + runTime + '毫秒');
+
+                        // 修复：resolve Promise以返回数据
+                        resolve(answer);
+                    })
+                    .catch(error => {
+                        // 4. 处理可能的错误（CORS/网络问题等）
+                        console.error('API调用出错:', error);
+                        reject(error);
+                    });
+            });
+        }
+        // 例子
+        // getApiResponse('手表')
+
+        // 添加新节点创建特效函数
+        function addNodeCreationEffect(nodeElement) {
+            // 添加缩放和高亮动画
+            nodeElement.style.transition = 'all 0.3s ease';
+            nodeElement.style.transform = 'scale(1.1)';
+            nodeElement.style.boxShadow = '0 0 20px rgba(24, 144, 255, 0.8)';
+
+            // 400ms后恢复原状
+            setTimeout(() => {
+                nodeElement.style.transform = 'scale(1)';
+                nodeElement.style.boxShadow = '0 3px 10px rgba(0, 0, 0, 0.08)';
+
+                // 动画结束后清除过渡效果，避免影响其他交互
+                setTimeout(() => {
+                    nodeElement.style.transition = '';
+                }, 300);
+            }, 400);
+        }
+
+
+    </script>
+</body>
+
+</html>
