@@ -529,7 +529,133 @@
             }
         }
     </style>
+    <style>
+        /* 侧边栏样式 */
+        #sidebar {
+            position: fixed;
+            right: 0;
+            top: 0;
+            /* width: 250px; */
+            height: 100vh;
+            overflow-y:scroll;
+            background-color: white;
+            color: #333;
+            z-index: 1000;
+            padding: 20px 10px;
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.3);
+            overflow-y: auto;
+        }
 
+        #sidebar h2 {
+            text-align: center;
+            margin-top: 0;
+            font-size: 1.4em;
+        }
+
+        .sidebar-item {
+            background-color: #f0f5ff;
+            /* 锁定节点的特殊背景色 */
+            border: 2px dashed #1890ff;
+            /* 锁定节点的特殊边框 */
+            color: #333;
+            margin: 10px 0;
+        }
+
+        .sidebar-item::after {
+            content: "🔒";
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 16px;
+        }
+
+        .sidebar-item:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
+            border-color: #d1d5da;
+        }
+
+        .sidebar-item:active {
+            cursor: grabbing;
+        }
+
+        .sidebar-item.dragging {
+            opacity: 0.7;
+        }
+    </style>
+    <style>
+        #custom-node-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            padding: 20px;
+            z-index: 1003;
+            width: 300px;
+            display: none;
+        }
+
+        #custom-node-dialog h3 {
+            margin-top: 0;
+            text-align: center;
+        }
+
+        #custom-node-dialog label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        #custom-node-dialog input,
+        #custom-node-dialog textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        #custom-node-dialog textarea {
+            height: 80px;
+            resize: vertical;
+        }
+
+        #custom-node-dialog .buttons {
+            text-align: right;
+        }
+
+        #custom-node-dialog button {
+            padding: 8px 15px;
+            margin-left: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #custom-node-dialog #confirm-custom-node {
+            background-color: #1890ff;
+            color: white;
+        }
+
+        #custom-node-dialog #cancel-custom-node {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        #custom-node-dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1002;
+            display: none;
+        }
+    </style>
 </head>
 
 <body>
@@ -542,7 +668,20 @@
         <!-- <button id="add-locked-node-btn" class="toolbar-btn">添加锁定节点</button> -->
         <!-- <div id="trash-can"></div> -->
     </div>
-
+    <!-- 添加侧边栏 -->
+    <div id="sidebar">
+        <h2>节点模板库</h2>
+        <div class="node sidebar-item" style="position: relative;" draggable="true" data-content="用户画像">用户画像</div>
+        <div class="node sidebar-item" style="position: relative;" draggable="true" data-content="竞品分析">竞品分析</div>
+        <div class="node sidebar-item" style="position: relative;" draggable="true" data-content="SWOT分析">SWOT分析</div>
+        <div class="node sidebar-item" style="position: relative;" draggable="true" data-content="PEST分析">PEST分析</div>
+        <div class="node sidebar-item" style="position: relative;" draggable="true" data-content="5W2H分析">5W2H分析</div>
+        <div class="node sidebar-item" style="position: relative;" draggable="true" data-content="STP战略">STP战略</div>
+        <div class="node sidebar-item" style="position: relative;" draggable="true" data-content="CMF设计">CMF设计</div>
+        <div class="node sidebar-item" style="position: relative;" draggable="true" data-content="新兴技术">新兴技术</div>
+        <div class="node sidebar-item" style="position: relative;" draggable="true" data-content="用户体验">用户体验</div>
+        <div class="node sidebar-item" style="position: relative;" draggable="true" data-content="商业模式">商业模式</div>
+    </div>
     <div class="instructions">
         <h3>操作说明</h3>
         <ul>
@@ -877,6 +1016,36 @@
             // --- Z-index Management ---
             let maxZIndex = 10; // 初始最大z-index
 
+            // 侧边栏
+            const sidebarItems = document.querySelectorAll('.sidebar-item');
+
+            sidebarItems.forEach(item => {
+                item.addEventListener('dragstart', (e) => {
+                    item.classList.add('dragging');
+                    e.dataTransfer.setData('text/plain', item.dataset.content);
+                });
+
+                item.addEventListener('dragend', () => {
+                    item.classList.remove('dragging');
+                });
+            });
+
+            canvasContainer.addEventListener('dragover', (e) => {
+                e.preventDefault();
+            });
+
+            canvasContainer.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const content = e.dataTransfer.getData('text/plain');
+                if (content) {
+                    // 获取画布容器相对于视口的位置
+                    const rect = canvasContainer.getBoundingClientRect();
+                    // 计算节点在画布上的位置（考虑缩放）
+                    const x = (e.clientX - rect.left);
+                    const y = (e.clientY - rect.top);
+                    createNode(x, y, content, 1);
+                }
+            });
 
             // --- Utility Functions ---
             function getOverlapArea(nodeA, nodeB) {
